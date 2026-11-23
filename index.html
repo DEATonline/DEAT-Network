@@ -611,13 +611,74 @@
       background: var(--surface);
       border: 1px solid var(--border-strong);
       border-radius: var(--radius);
-      width: 100%;
-      max-width: 1020px;
-      max-height: 90vh;
+      width: 96vw;
+      max-width: 1680px;
+      max-height: 94vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       z-index: 1001;
+    }
+
+    .editor-modal-body {
+      padding: 14px 18px;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .editor-split-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .editor-split-layout .editor-section {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .editor-split-layout .editor-section form {
+      flex-shrink: 0;
+    }
+
+    .editor-split-layout .editor-section .table-wrap {
+      flex: 1;
+      min-height: 140px;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+
+    .editor-split-layout .editor-section .table-wrap thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    @media (max-width: 1120px) {
+      .editor-modal-body {
+        overflow-y: auto;
+      }
+      .editor-split-layout {
+        grid-template-columns: minmax(0, 1fr);
+        flex: none;
+      }
+      .editor-split-layout .editor-section {
+        height: auto;
+        overflow: visible;
+      }
+      .editor-split-layout .editor-section .table-wrap {
+        max-height: 320px;
+      }
     }
 
     .modal-card.modal-sm {
@@ -682,16 +743,24 @@
 
     .form-grid-airport {
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.65fr) minmax(0, 0.65fr) minmax(0, 0.65fr) minmax(0, 0.9fr) minmax(0, 0.85fr) minmax(0, 1.15fr);
-      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
       align-items: end;
+    }
+
+    .form-grid-airport .field-span-2 {
+      grid-column: span 2;
     }
 
     .form-grid-route {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.8fr) auto auto;
-      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
       align-items: end;
+    }
+
+    .form-grid-route .field-span-2 {
+      grid-column: span 2;
     }
 
     @media (max-width: 900px) {
@@ -751,6 +820,14 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
+    }
+
+    .editor-row-clickable {
+      cursor: pointer;
+    }
+
+    .editor-row-clickable:hover td {
+      background: var(--surface-alt);
     }
 
     th, td {
@@ -880,6 +957,10 @@
       <option value="Oceania">Oceania</option>
     </select>
 
+    <select id="filter-type" class="rail-select" aria-label="Filter by route type">
+      <option value="ALL">TYPE: ALL</option>
+    </select>
+
     <div class="multi-filter-wrap">
       <button type="button" class="multi-filter-btn" id="aircraft-toggle-btn" aria-expanded="false">
         FLEET: ALL
@@ -965,120 +1046,134 @@
         </div>
       </div>
 
-      <div class="modal-body">
-        <section class="editor-section">
-          <h3>Airports &amp; Hubs</h3>
-          <form id="add-airport-form" class="form-grid-airport">
-            <div class="field">
-              <label for="airport-city">City Name</label>
-              <input type="text" id="airport-city" placeholder="e.g. Vienna" required />
-            </div>
-            <div class="field">
-              <label for="airport-icao">ICAO / IATA</label>
-              <input type="text" id="airport-icao" maxlength="4" placeholder="LOWW" style="text-transform:uppercase;" required />
-            </div>
-            <div class="field">
-              <label for="airport-lat">Latitude</label>
-              <input type="number" id="airport-lat" step="0.0001" min="-85" max="85" placeholder="48.1103" required />
-            </div>
-            <div class="field">
-              <label for="airport-lon">Longitude</label>
-              <input type="number" id="airport-lon" step="0.0001" min="-180" max="180" placeholder="16.5697" required />
-            </div>
-            <div class="field">
-              <label for="airport-continent">Region</label>
-              <select id="airport-continent">
-                <option value="Europe">Europe</option>
-                <option value="North America">North America</option>
-                <option value="South America">South America</option>
-                <option value="Asia">Asia</option>
-                <option value="Middle East">Middle East</option>
-                <option value="Africa">Africa</option>
-                <option value="Oceania">Oceania</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="airport-type">Role</label>
-              <select id="airport-type">
-                <option value="dest">Station</option>
-                <option value="hub">Hub</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="airport-active">Status</label>
-              <div style="display:flex;gap:6px;">
+      <div class="editor-modal-body">
+        <div class="editor-split-layout">
+          <section class="editor-section">
+            <h3>Airports &amp; Hubs</h3>
+            <form id="add-airport-form" class="form-grid-airport">
+              <div class="field">
+                <label for="airport-city">City Name</label>
+                <input type="text" id="airport-city" placeholder="e.g. Vienna" required />
+              </div>
+              <div class="field">
+                <label for="airport-icao">ICAO / IATA</label>
+                <input type="text" id="airport-icao" maxlength="4" placeholder="LOWW" style="text-transform:uppercase;" required />
+              </div>
+              <div class="field">
+                <label for="airport-lat">Latitude</label>
+                <input type="number" id="airport-lat" step="0.0001" min="-85" max="85" placeholder="48.1103" required />
+              </div>
+              <div class="field">
+                <label for="airport-lon">Longitude</label>
+                <input type="number" id="airport-lon" step="0.0001" min="-180" max="180" placeholder="16.5697" required />
+              </div>
+              <div class="field">
+                <label for="airport-continent">Region</label>
+                <select id="airport-continent">
+                  <option value="Europe">Europe</option>
+                  <option value="North America">North America</option>
+                  <option value="South America">South America</option>
+                  <option value="Asia">Asia</option>
+                  <option value="Middle East">Middle East</option>
+                  <option value="Africa">Africa</option>
+                  <option value="Oceania">Oceania</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="airport-type">Role</label>
+                <select id="airport-type">
+                  <option value="dest">Station</option>
+                  <option value="hub">Hub</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="airport-active">Status</label>
                 <select id="airport-active">
                   <option value="true">Active</option>
                   <option value="false">Inactive</option>
                 </select>
-                <button type="submit" class="btn btn-primary" id="airport-submit-btn">Save</button>
               </div>
-            </div>
-          </form>
+              <div class="field">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary" id="airport-submit-btn">Save Airport</button>
+              </div>
+              <div class="field field-span-2">
+                <label for="airport-remarks">Internal Remarks (Editor Only)</label>
+                <input type="text" id="airport-remarks" placeholder="Internal notes, slot constraints, etc." />
+              </div>
+            </form>
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>City</th>
-                  <th>Code</th>
-                  <th>Region</th>
-                  <th>Coordinates</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th style="text-align:right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="airports-table-body"></tbody>
-            </table>
-          </div>
-        </section>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th><button type="button" class="sort-th-btn" data-sort-airport="city">City <span class="sort-ind" data-ap-ind="city"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-airport="code">Code <span class="sort-ind" data-ap-ind="code"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-airport="region">Region <span class="sort-ind" data-ap-ind="region"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-airport="role">Role <span class="sort-ind" data-ap-ind="role"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-airport="status">Status <span class="sort-ind" data-ap-ind="status"></span></button></th>
+                    <th>Remarks</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="airports-table-body"></tbody>
+              </table>
+            </div>
+          </section>
 
-        <section class="editor-section">
-          <h3>Flight Sectors</h3>
-          <form id="add-route-form" class="form-grid-route">
-            <div class="field">
-              <label for="route-origin">Origin</label>
-              <select id="route-origin" required></select>
-            </div>
-            <div class="field">
-              <label for="route-dest">Destination</label>
-              <select id="route-dest" required></select>
-            </div>
-            <div class="field">
-              <label for="route-aircraft">Aircraft (comma-separated)</label>
-              <input type="text" id="route-aircraft" placeholder="e.g. A320neo, B787-9" value="A320neo" required />
-            </div>
-            <div class="field">
-              <label for="route-freq">Frequency</label>
-              <input type="text" id="route-freq" placeholder="e.g. Daily" value="Daily" />
-            </div>
-            <div class="field">
-              <label for="route-color">Color</label>
-              <input type="color" id="route-color" value="#EE1C25" title="Route color" />
-            </div>
-            <div class="field">
-              <label>&nbsp;</label>
-              <button type="submit" class="btn btn-primary" id="route-submit-btn">Save Sector</button>
-            </div>
-          </form>
+          <section class="editor-section">
+            <h3>Flight Sectors</h3>
+            <form id="add-route-form" class="form-grid-route">
+              <div class="field">
+                <label for="route-origin">Origin</label>
+                <select id="route-origin" required></select>
+              </div>
+              <div class="field">
+                <label for="route-dest">Destination</label>
+                <select id="route-dest" required></select>
+              </div>
+              <div class="field">
+                <label for="route-aircraft">Aircraft (comma-separated)</label>
+                <input type="text" id="route-aircraft" placeholder="e.g. A320neo, B787-9" value="A320neo" required />
+              </div>
+              <div class="field">
+                <label for="route-type">Type</label>
+                <input type="text" id="route-type" placeholder="e.g. Scheduled, Charter" value="Scheduled" required />
+              </div>
+              <div class="field">
+                <label for="route-color">Color</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="color" id="route-color" value="#EE1C25" title="Route color" />
+                </div>
+              </div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-primary" id="route-submit-btn">Save Sector</button>
+              </div>
+              <div class="field field-span-2">
+                <label for="route-remarks">Internal Remarks (Editor Only)</label>
+                <input type="text" id="route-remarks" placeholder="Internal sector notes, rights, seasonality, etc." />
+              </div>
+            </form>
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th><button type="button" class="sort-th-btn" data-sort-route="color">Color <span class="sort-ind" data-ind="color"></span></button></th>
-                  <th><button type="button" class="sort-th-btn" data-sort-route="origin">Origin <span class="sort-ind" data-ind="origin"></span></button></th>
-                  <th><button type="button" class="sort-th-btn" data-sort-route="dest">Destination <span class="sort-ind" data-ind="dest"></span></button></th>
-                  <th><button type="button" class="sort-th-btn" data-sort-route="aircraft">Aircraft <span class="sort-ind" data-ind="aircraft"></span></button></th>
-                  <th>Frequency</th>
-                  <th style="text-align:right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="routes-table-body"></tbody>
-            </table>
-          </div>
-        </section>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th><button type="button" class="sort-th-btn" data-sort-route="color">Color <span class="sort-ind" data-ind="color"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-route="origin">Origin <span class="sort-ind" data-ind="origin"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-route="dest">Destination <span class="sort-ind" data-ind="dest"></span></button></th>
+                    <th><button type="button" class="sort-th-btn" data-sort-route="aircraft">Aircraft <span class="sort-ind" data-ind="aircraft"></span></button></th>
+                    <th>Type</th>
+                    <th>Remarks</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="routes-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
 
         <div class="error-msg" id="editor-error"></div>
       </div>
@@ -1126,6 +1221,8 @@
 
     let selectedAirportIcao = null;
     let selectedRouteKey = null;
+    let airportSortField = null;
+    let airportSortDir = "asc";
     let routeSortField = null;
     let routeSortDir = "asc";
 
@@ -1171,7 +1268,8 @@
           lon: Math.max(-180, Math.min(180, Number(a.lon) || 0)),
           continent: String(a.continent || "Europe").trim(),
           isHub: Boolean(a.isHub),
-          active: a.active === undefined ? true : Boolean(a.active)
+          active: a.active === undefined ? true : Boolean(a.active),
+          remarks: String(a.remarks || "").trim()
         }));
 
       const validCodes = new Set(airports.map((a) => a.icao));
@@ -1182,11 +1280,13 @@
           const color = /^#[0-9A-Fa-f]{6}$/.test(r.color)
             ? r.color
             : (/^#[0-9A-Fa-f]{6}$/.test(payload.routeColor) ? payload.routeColor : DEFAULT_ROUTE_COLOR);
+          const routeType = String(r.type || r.frequency || "Scheduled").trim() || "Scheduled";
           return {
             origin: r.origin,
             dest: r.dest,
             aircraftTypes: list.length ? list : ["A320neo"],
-            frequency: String(r.frequency || "Daily").trim(),
+            type: routeType,
+            remarks: String(r.remarks || "").trim(),
             color
           };
         });
@@ -1452,6 +1552,7 @@
     function getFilteredNetwork() {
       const hubVal = document.getElementById("filter-hub").value;
       const contVal = document.getElementById("filter-continent").value;
+      const typeVal = document.getElementById("filter-type").value;
       const hasAircraftFilter = selectedAircraftSet.size > 0;
 
       const activeAirports = networkData.airports.filter((a) => a.active !== false);
@@ -1463,6 +1564,8 @@
         if (!o || !d) return false;
         if (hubVal !== "ALL" && r.origin !== hubVal && r.dest !== hubVal) return false;
         if (contVal !== "ALL" && o.continent !== contVal && d.continent !== contVal) return false;
+        const rType = String(r.type || r.frequency || "Scheduled").trim();
+        if (typeVal !== "ALL" && rType !== typeVal) return false;
         if (hasAircraftFilter) {
           const matchesAny = r.aircraftTypes.some((ac) => selectedAircraftSet.has(ac));
           if (!matchesAny) return false;
@@ -1471,7 +1574,7 @@
       });
 
       const visibleIcaos = new Set();
-      if (hubVal === "ALL" && contVal === "ALL" && !hasAircraftFilter) {
+      if (hubVal === "ALL" && contVal === "ALL" && typeVal === "ALL" && !hasAircraftFilter) {
         activeAirports.forEach((a) => visibleIcaos.add(a.icao));
       } else {
         if (hubVal !== "ALL" && airportByIcao.has(hubVal)) visibleIcaos.add(hubVal);
@@ -1715,8 +1818,8 @@
           <div class="metric-val">${route.origin}–${route.dest}</div>
         </div>
         <div class="metric-cell">
-          <div class="metric-key">Frequency</div>
-          <div class="metric-val">${route.frequency}</div>
+          <div class="metric-key">Type</div>
+          <div class="metric-val">${route.type || route.frequency || "Scheduled"}</div>
         </div>
         <div class="metric-cell" style="grid-column: span 2;">
           <div class="metric-key">Aircraft</div>
@@ -1844,7 +1947,7 @@
       renderMap();
     });
 
-    ["filter-hub", "filter-continent"].forEach((id) => {
+    ["filter-hub", "filter-continent", "filter-type"].forEach((id) => {
       document.getElementById(id).addEventListener("change", () => {
         renderMap();
       });
@@ -1933,36 +2036,87 @@
         hubs.map((h) => `<option value="${h.icao}">${h.city.toUpperCase()} (${h.icao})</option>`).join("");
       if ([...hubSel.options].some((o) => o.value === prevHub)) hubSel.value = prevHub;
 
+      const allTypes = [...new Set(networkData.routes.map((r) => String(r.type || r.frequency || "Scheduled").trim()).filter(Boolean))].sort();
+      const typeSel = document.getElementById("filter-type");
+      const prevType = typeSel.value;
+      typeSel.innerHTML = `<option value="ALL">TYPE: ALL</option>` +
+        allTypes.map((t) => `<option value="${t}">TYPE: ${t.toUpperCase()}</option>`).join("");
+      if ([...typeSel.options].some((o) => o.value === prevType)) typeSel.value = prevType;
+
       renderAircraftToggleList(allAircraftTypes);
 
-      const sortedAirports = [...networkData.airports].sort((a, b) => a.city.localeCompare(b.city));
-      const apOptions = sortedAirports.length
-        ? sortedAirports.map((a) => `<option value="${a.icao}">${a.city.toUpperCase()} (${a.icao})</option>`).join("")
+      const dropdownAirports = [...networkData.airports].sort((a, b) => a.city.localeCompare(b.city));
+      const apOptions = dropdownAirports.length
+        ? dropdownAirports.map((a) => `<option value="${a.icao}">${a.city.toUpperCase()} (${a.icao})</option>`).join("")
         : `<option value="">Add airports first</option>`;
+
+      const sortedAirports = [...networkData.airports];
+      if (airportSortField) {
+        const dir = airportSortDir === "desc" ? -1 : 1;
+        sortedAirports.sort((a, b) => {
+          let av = "";
+          let bv = "";
+          if (airportSortField === "city") {
+            av = (a.city || "").toLowerCase();
+            bv = (b.city || "").toLowerCase();
+          } else if (airportSortField === "code") {
+            av = (a.icao || "").toLowerCase();
+            bv = (b.icao || "").toLowerCase();
+          } else if (airportSortField === "region") {
+            av = (a.continent || "").toLowerCase();
+            bv = (b.continent || "").toLowerCase();
+          } else if (airportSortField === "role") {
+            av = a.isHub ? "hub" : "station";
+            bv = b.isHub ? "hub" : "station";
+          } else if (airportSortField === "status") {
+            av = a.active === false ? "inactive" : "active";
+            bv = b.active === false ? "inactive" : "active";
+          }
+          return av.localeCompare(bv) * dir;
+        });
+      }
+
+      document.querySelectorAll("[data-sort-airport]").forEach((btn) => {
+        const field = btn.getAttribute("data-sort-airport");
+        const ind = btn.querySelector(".sort-ind");
+        if (field === airportSortField) {
+          btn.classList.add("active");
+          if (ind) ind.textContent = airportSortDir === "desc" ? "▼" : "▲";
+        } else {
+          btn.classList.remove("active");
+          if (ind) ind.textContent = "";
+        }
+      });
 
       const originSel = document.getElementById("route-origin");
       const destSel = document.getElementById("route-dest");
+      const prevOrigin = originSel.value;
+      const prevDest = destSel.value;
       originSel.innerHTML = apOptions;
       destSel.innerHTML = apOptions;
-      if (sortedAirports.length > 1) destSel.selectedIndex = 1;
+      if (prevOrigin && [...originSel.options].some((o) => o.value === prevOrigin)) originSel.value = prevOrigin;
+      if (prevDest && [...destSel.options].some((o) => o.value === prevDest)) {
+        destSel.value = prevDest;
+      } else if (sortedAirports.length > 1) {
+        destSel.selectedIndex = 1;
+      }
 
       const airportsBody = document.getElementById("airports-table-body");
       airportsBody.innerHTML = sortedAirports.length
         ? sortedAirports.map((a) => `
-          <tr>
+          <tr class="editor-row-clickable" data-row-airport="${a.icao}">
             <td style="text-transform:capitalize;font-weight:600;">${a.city}</td>
             <td style="font-family:var(--font-mono);">${a.icao}</td>
             <td>${a.continent}</td>
-            <td style="font-family:var(--font-mono);">${a.lat.toFixed(2)}, ${a.lon.toFixed(2)}</td>
             <td>${a.isHub ? '<span class="badge-hub">Hub</span>' : 'Station'}</td>
             <td>
               <button type="button" class="btn btn-sm" data-toggle-airport="${a.icao}" style="color:${a.active === false ? 'var(--ink-muted)' : 'var(--ok)'};">
                 ${a.active === false ? 'Inactive' : 'Active'}
               </button>
             </td>
+            <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted);" title="${(a.remarks || "").replace(/"/g, "&quot;")}">${a.remarks || "—"}</td>
             <td style="text-align:right;white-space:nowrap;">
-              <button type="button" class="btn btn-sm" data-edit-airport="${a.icao}">Edit</button>
-              <button type="button" class="btn btn-sm btn-danger" data-del-airport="${a.icao}">Remove</button>
+              <button type="button" class="btn btn-sm btn-danger" data-del-airport="${a.icao}">Delete</button>
             </td>
           </tr>
         `).join("")
@@ -2016,21 +2170,22 @@
           const d = airportMap.get(r.dest);
           const rColor = r.color || DEFAULT_ROUTE_COLOR;
           const chips = (r.aircraftTypes || []).map((ac) => `<span class="ac-chip">${ac}</span>`).join("");
+          const rType = r.type || r.frequency || "Scheduled";
           return `
-            <tr>
+            <tr class="editor-row-clickable" data-row-route="${origIdx}">
               <td><span class="swatch-dot" style="background:${rColor};" title="${rColor}"></span></td>
               <td><strong>${o ? o.city.toUpperCase() : r.origin}</strong> (${r.origin})</td>
               <td><strong>${d ? d.city.toUpperCase() : r.dest}</strong> (${r.dest})</td>
               <td>${chips}</td>
-              <td style="font-family:var(--font-mono);">${r.frequency}</td>
+              <td style="font-family:var(--font-mono);">${rType}</td>
+              <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-muted);" title="${(r.remarks || "").replace(/"/g, "&quot;")}">${r.remarks || "—"}</td>
               <td style="text-align:right;white-space:nowrap;">
-                <button type="button" class="btn btn-sm" data-edit-route="${origIdx}">Edit</button>
                 <button type="button" class="btn btn-sm btn-danger" data-del-route="${origIdx}">Delete</button>
               </td>
             </tr>
           `;
         }).join("")
-        : `<tr><td colspan="6" class="hint-text" style="text-align:center;padding:12px;">No flight sectors in database.</td></tr>`;
+        : `<tr><td colspan="7" class="hint-text" style="text-align:center;padding:12px;">No flight sectors in database.</td></tr>`;
     }
 
     function renderAll() {
@@ -2048,6 +2203,7 @@
       const continent = document.getElementById("airport-continent").value;
       const isHub = document.getElementById("airport-type").value === "hub";
       const active = document.getElementById("airport-active").value === "true";
+      const remarks = document.getElementById("airport-remarks").value.trim();
 
       if (!/^[A-Z0-9]{3,4}$/.test(icao)) {
         editorError.textContent = "ICAO/IATA code must be 3 to 4 alphanumeric characters.";
@@ -2058,7 +2214,7 @@
         return;
       }
 
-      const entry = { icao, city, lat, lon, continent, isHub, active };
+      const entry = { icao, city, lat, lon, continent, isHub, active, remarks };
       const existingIdx = networkData.airports.findIndex((a) => a.icao === icao);
       if (existingIdx >= 0) {
         networkData.airports[existingIdx] = entry;
@@ -2082,9 +2238,19 @@
         return;
       }
 
-      const editIcao = e.target.getAttribute("data-edit-airport");
-      if (editIcao) {
-        const ap = networkData.airports.find((a) => a.icao === editIcao);
+      const delIcao = e.target.getAttribute("data-del-airport");
+      if (delIcao) {
+        networkData.airports = networkData.airports.filter((a) => a.icao !== delIcao);
+        networkData.routes = networkData.routes.filter((r) => r.origin !== delIcao && r.dest !== delIcao);
+        if (selectedAirportIcao === delIcao) clearInspector();
+        renderAll();
+        return;
+      }
+
+      const rowEl = e.target.closest("[data-row-airport]");
+      if (rowEl && !e.target.closest("button")) {
+        const rowIcao = rowEl.getAttribute("data-row-airport");
+        const ap = networkData.airports.find((a) => a.icao === rowIcao);
         if (ap) {
           document.getElementById("airport-city").value = ap.city;
           document.getElementById("airport-icao").value = ap.icao;
@@ -2093,16 +2259,8 @@
           document.getElementById("airport-continent").value = ap.continent;
           document.getElementById("airport-type").value = ap.isHub ? "hub" : "dest";
           document.getElementById("airport-active").value = ap.active === false ? "false" : "true";
+          document.getElementById("airport-remarks").value = ap.remarks || "";
         }
-        return;
-      }
-
-      const delIcao = e.target.getAttribute("data-del-airport");
-      if (delIcao) {
-        networkData.airports = networkData.airports.filter((a) => a.icao !== delIcao);
-        networkData.routes = networkData.routes.filter((r) => r.origin !== delIcao && r.dest !== delIcao);
-        if (selectedAirportIcao === delIcao) clearInspector();
-        renderAll();
       }
     });
 
@@ -2112,7 +2270,8 @@
       const origin = document.getElementById("route-origin").value;
       const dest = document.getElementById("route-dest").value;
       const aircraftTypes = parseAircraftList(document.getElementById("route-aircraft").value);
-      const frequency = document.getElementById("route-freq").value.trim() || "Daily";
+      const type = document.getElementById("route-type").value.trim() || "Scheduled";
+      const remarks = document.getElementById("route-remarks").value.trim();
       const color = document.getElementById("route-color").value || DEFAULT_ROUTE_COLOR;
 
       if (!origin || !dest) {
@@ -2129,7 +2288,7 @@
       }
 
       const existingIdx = networkData.routes.findIndex((r) => r.origin === origin && r.dest === dest);
-      const entry = { origin, dest, aircraftTypes, frequency, color };
+      const entry = { origin, dest, aircraftTypes, type, remarks, color };
       if (existingIdx >= 0) {
         networkData.routes[existingIdx] = entry;
       } else {
@@ -2139,7 +2298,21 @@
       renderAll();
     });
 
-    document.querySelectorAll(".sort-th-btn").forEach((btn) => {
+    document.querySelectorAll("[data-sort-airport]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const field = btn.getAttribute("data-sort-airport");
+        if (!field) return;
+        if (airportSortField === field) {
+          airportSortDir = airportSortDir === "asc" ? "desc" : "asc";
+        } else {
+          airportSortField = field;
+          airportSortDir = "asc";
+        }
+        renderControlsAndTables();
+      });
+    });
+
+    document.querySelectorAll("[data-sort-route]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const field = btn.getAttribute("data-sort-route");
         if (!field) return;
@@ -2154,24 +2327,25 @@
     });
 
     document.getElementById("routes-table-body").addEventListener("click", (e) => {
-      const editIdx = e.target.getAttribute("data-edit-route");
-      if (editIdx !== null) {
-        const r = networkData.routes[Number(editIdx)];
-        if (r) {
-          document.getElementById("route-origin").value = r.origin;
-          document.getElementById("route-dest").value = r.dest;
-          document.getElementById("route-aircraft").value = (r.aircraftTypes || []).join(", ");
-          document.getElementById("route-freq").value = r.frequency;
-          document.getElementById("route-color").value = r.color || DEFAULT_ROUTE_COLOR;
-        }
-        return;
-      }
-
       const delIdx = e.target.getAttribute("data-del-route");
       if (delIdx !== null) {
         networkData.routes.splice(Number(delIdx), 1);
         clearInspector();
         renderAll();
+        return;
+      }
+
+      const rowEl = e.target.closest("[data-row-route]");
+      if (rowEl && !e.target.closest("button")) {
+        const r = networkData.routes[Number(rowEl.getAttribute("data-row-route"))];
+        if (r) {
+          document.getElementById("route-origin").value = r.origin;
+          document.getElementById("route-dest").value = r.dest;
+          document.getElementById("route-aircraft").value = (r.aircraftTypes || []).join(", ");
+          document.getElementById("route-type").value = r.type || r.frequency || "Scheduled";
+          document.getElementById("route-remarks").value = r.remarks || "";
+          document.getElementById("route-color").value = r.color || DEFAULT_ROUTE_COLOR;
+        }
       }
     });
 
