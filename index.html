@@ -557,6 +557,11 @@
       background: var(--surface-alt);
     }
 
+    .zoom-btn.is-active {
+      background: var(--surface-alt);
+      color: var(--deat-red);
+    }
+
     /* Map SVG Styling */
     .airport-node {
       cursor: pointer;
@@ -1000,6 +1005,7 @@
 
   <!-- Bottom-Right Zoom & Theme Strip -->
   <div class="zoom-strip">
+    <button type="button" class="zoom-btn" id="show-all-airports-btn" aria-pressed="false" title="Show all airports on the map, even when filtered">All Airports</button>
     <button type="button" class="zoom-btn" id="zoom-in-btn" title="Zoom in">+</button>
     <button type="button" class="zoom-btn" id="zoom-out-btn" title="Zoom out">&minus;</button>
     <button type="button" class="zoom-btn" id="zoom-reset-btn" title="Reset global view">Reset</button>
@@ -1221,6 +1227,8 @@
 
     let selectedAirportIcao = null;
     let selectedRouteKey = null;
+    let hoveredAirportIcao = null;
+    let showAllAirports = false;
     let airportSortField = null;
     let airportSortDir = "asc";
     let routeSortField = null;
@@ -1419,9 +1427,9 @@
       return segments.filter((seg) => seg.length >= 2);
     }
 
-    function calculateGreatCircleKm(src, dst) {
+    function calculateGreatCircleNm(src, dst) {
       const rad = d3.geoDistance([src.lon, src.lat], [dst.lon, dst.lat]);
-      return Math.round(rad * 6371);
+      return Math.round((rad * 6371) / 1.852);
     }
 
     function estimateLabelBox(ap, screenPt) {
@@ -1549,13 +1557,29 @@
       svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
     });
 
+    const showAllAirportsBtn = document.getElementById("show-all-airports-btn");
+    function syncAllAirportsBtn() {
+      const enabled = Boolean(showAllAirports);
+      showAllAirportsBtn.textContent = "All Airports";
+      showAllAirportsBtn.setAttribute("aria-pressed", String(enabled));
+      showAllAirportsBtn.classList.toggle("is-active", enabled);
+    }
+    showAllAirportsBtn.addEventListener("click", () => {
+      showAllAirports = !showAllAirports;
+      syncAllAirportsBtn();
+      renderMap();
+    });
+
     function getFilteredNetwork() {
       const hubVal = document.getElementById("filter-hub").value;
       const contVal = document.getElementById("filter-continent").value;
       const typeVal = document.getElementById("filter-type").value;
       const hasAircraftFilter = selectedAircraftSet.size > 0;
 
-      const activeAirports = networkData.airports.filter((a) => a.active !== false);
+      const includeAll = Boolean(showAllAirports);
+      const activeAirports = includeAll
+        ? [...networkData.airports]
+        : networkData.airports.filter((a) => a.active !== false);
       const airportByIcao = new Map(activeAirports.map((a) => [a.icao, a]));
 
       const filteredRoutes = networkData.routes.filter((r) => {
@@ -1574,7 +1598,7 @@
       });
 
       const visibleIcaos = new Set();
-      if (hubVal === "ALL" && contVal === "ALL" && typeVal === "ALL" && !hasAircraftFilter) {
+      if (includeAll || (hubVal === "ALL" && contVal === "ALL" && typeVal === "ALL" && !hasAircraftFilter)) {
         activeAirports.forEach((a) => visibleIcaos.add(a.icao));
       } else {
         if (hubVal !== "ALL" && airportByIcao.has(hubVal)) visibleIcaos.add(hubVal);
@@ -1630,10 +1654,11 @@
         const dst = airportByIcao.get(r.dest);
         if (!src || !dst) return;
         const rKey = `${r.origin}->${r.dest}`;
+        const activeFocusAirport = hoveredAirportIcao || selectedAirportIcao;
         const isHighlighted =
           selectedRouteKey === rKey ||
-          (selectedAirportIcao && (r.origin === selectedAirportIcao || r.dest === selectedAirportIcao));
-        const isDimmed = (selectedRouteKey || selectedAirportIcao) && !isHighlighted;
+          (activeFocusAirport && (r.origin === activeFocusAirport || r.dest === activeFocusAirport));
+        const isDimmed = (selectedRouteKey || activeFocusAirport) && !isHighlighted;
         const routeColor = r.color || DEFAULT_ROUTE_COLOR;
 
         const segments = computeSplitFlightArcs(src, dst);
@@ -1692,6 +1717,18 @@
           const invK = 1 / Math.max(1, currentZoomScale || 1);
           return `translate(${x}, ${y}) scale(${invK.toFixed(4)})`;
         })
+        .on("mouseenter", (event, d) => {
+          if (hoveredAirportIcao !== d.icao) {
+            hoveredAirportIcao = d.icao;
+            renderMap();
+          }
+        })
+        .on("mouseleave", () => {
+          if (hoveredAirportIcao !== null) {
+            hoveredAirportIcao = null;
+            renderMap();
+          }
+        })
         .on("click", (event, d) => {
           event.stopPropagation();
           selectAirport(d);
@@ -1699,7 +1736,9 @@
 
       nodeGroups.select("circle.outer-ring")
         .attr("fill", markerFill)
-        .attr("stroke", "#EE1C25");
+        .attr("stroke", (d) => (d.active === false ? "#94a3b8" : "#EE1C25"))
+        .attr("stroke-dasharray", (d) => (d.active === false ? "2.5,2" : null))
+        .attr("opacity", (d) => (d.active === false ? 0.75 : 1));
 
       nodeGroups.select("circle.inner-dot")
         .attr("fill", "#EE1C25");
@@ -1707,7 +1746,7 @@
       nodeGroups.select("text.map-label-city")
         .attr("text-anchor", "middle")
         .style("stroke", labelHalo)
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? (isDarkMode ? "#f8fafc" : "#16181d") : "#EE1C25"))
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? (isDarkMode ? "#f8fafc" : "#16181d") : (d.active === false ? "#94a3b8" : "#EE1C25")))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
@@ -1805,7 +1844,7 @@
       const airportMap = new Map(networkData.airports.map((a) => [a.icao, a]));
       const src = airportMap.get(route.origin);
       const dst = airportMap.get(route.dest);
-      const distKm = src && dst ? calculateGreatCircleKm(src, dst) : 0;
+      const distNm = src && dst ? calculateGreatCircleNm(src, dst) : 0;
       const acText = (route.aircraftTypes || []).join(", ");
 
       document.getElementById("inspector-kicker").textContent = "Flight Sector";
@@ -1827,13 +1866,12 @@
         </div>
         <div class="metric-cell">
           <div class="metric-key">Distance</div>
-          <div class="metric-val">${distKm.toLocaleString()} km</div>
+          <div class="metric-val">${distNm.toLocaleString()} NM</div>
         </div>
         <div class="metric-cell">
           <div class="metric-key">Sector Color</div>
-          <div class="metric-val" style="display:flex;align-items:center;gap:6px;">
-            <span class="swatch-dot" style="background:${route.color || DEFAULT_ROUTE_COLOR};"></span>
-            ${route.color || DEFAULT_ROUTE_COLOR}
+          <div class="metric-val" style="display:flex;align-items:center;">
+            <span style="display:inline-block;width:28px;height:14px;border-radius:2px;border:1px solid var(--border-strong);background:${route.color || DEFAULT_ROUTE_COLOR};"></span>
           </div>
         </div>
       `;
@@ -1981,6 +2019,7 @@
         badge.textContent = "";
         signoutBtn.style.display = "none";
       }
+      syncAllAirportsBtn();
     }
 
     function handleOpenEditor() {
