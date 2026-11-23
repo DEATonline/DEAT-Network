@@ -600,7 +600,7 @@
 
     .form-grid-airport {
       display: grid;
-      grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.15fr);
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.65fr) minmax(0, 0.65fr) minmax(0, 0.65fr) minmax(0, 0.9fr) minmax(0, 0.85fr) minmax(0, 1.15fr);
       gap: 10px;
       align-items: end;
     }
@@ -887,10 +887,17 @@
             </div>
             <div class="field">
               <label for="airport-type">Role</label>
+              <select id="airport-type">
+                <option value="dest">Destination</option>
+                <option value="hub">Primary Hub</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="airport-active">Status</label>
               <div style="display:flex;gap:6px;">
-                <select id="airport-type">
-                  <option value="dest">Destination</option>
-                  <option value="hub">Primary Hub</option>
+                <select id="airport-active">
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </select>
                 <button type="submit" class="btn btn-primary" id="airport-submit-btn">Save</button>
               </div>
@@ -906,6 +913,7 @@
                   <th>Continent</th>
                   <th>Coordinates</th>
                   <th>Role</th>
+                  <th>Status</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
@@ -1049,7 +1057,8 @@
           lat: Math.max(-85, Math.min(85, Number(a.lat) || 0)),
           lon: Math.max(-180, Math.min(180, Number(a.lon) || 0)),
           continent: String(a.continent || "Europe").trim(),
-          isHub: Boolean(a.isHub)
+          isHub: Boolean(a.isHub),
+          active: a.active === undefined ? true : Boolean(a.active)
         }));
 
       const validCodes = new Set(airports.map((a) => a.icao));
@@ -1268,7 +1277,8 @@
       const contVal = document.getElementById("filter-continent").value;
       const hasAircraftFilter = selectedAircraftSet.size > 0;
 
-      const airportByIcao = new Map(networkData.airports.map((a) => [a.icao, a]));
+      const activeAirports = networkData.airports.filter((a) => a.active !== false);
+      const airportByIcao = new Map(activeAirports.map((a) => [a.icao, a]));
 
       const filteredRoutes = networkData.routes.filter((r) => {
         const o = airportByIcao.get(r.origin);
@@ -1285,19 +1295,19 @@
 
       const visibleIcaos = new Set();
       if (hubVal === "ALL" && contVal === "ALL" && !hasAircraftFilter) {
-        networkData.airports.forEach((a) => visibleIcaos.add(a.icao));
+        activeAirports.forEach((a) => visibleIcaos.add(a.icao));
       } else {
-        if (hubVal !== "ALL") visibleIcaos.add(hubVal);
+        if (hubVal !== "ALL" && airportByIcao.has(hubVal)) visibleIcaos.add(hubVal);
         filteredRoutes.forEach((r) => {
           visibleIcaos.add(r.origin);
           visibleIcaos.add(r.dest);
         });
         if (contVal !== "ALL" && filteredRoutes.length === 0) {
-          networkData.airports.filter((a) => a.continent === contVal).forEach((a) => visibleIcaos.add(a.icao));
+          activeAirports.filter((a) => a.continent === contVal).forEach((a) => visibleIcaos.add(a.icao));
         }
       }
 
-      const visibleAirports = networkData.airports.filter((a) => visibleIcaos.has(a.icao));
+      const visibleAirports = activeAirports.filter((a) => visibleIcaos.has(a.icao));
       return { filteredRoutes, visibleAirports, airportByIcao };
     }
 
@@ -1407,13 +1417,40 @@
       nodeGroups.select("circle.inner-dot")
         .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"));
 
+      // Prevent overlapping labels in dense regions (like Central Europe) while keeping hubs & selected nodes visible
+      const projectedCoords = new Map(visibleAirports.map((d) => [d.icao, projection([d.lon, d.lat])]));
+      const minLabelSpacingPx = currentZoomScale >= 3.2 ? 22 : currentZoomScale >= 1.8 ? 34 : 48;
+      const placedLabelPoints = [];
+
+      const prioritizedForLabels = [...visibleAirports].sort((a, b) => {
+        const aSel = a.icao === selectedAirportIcao ? 2 : 0;
+        const bSel = b.icao === selectedAirportIcao ? 2 : 0;
+        const aHub = a.isHub ? 1 : 0;
+        const bHub = b.isHub ? 1 : 0;
+        return (bSel + bHub) - (aSel + aHub);
+      });
+
+      const showLabelSet = new Set();
+      for (const ap of prioritizedForLabels) {
+        const pt = projectedCoords.get(ap.icao);
+        if (!pt || Number.isNaN(pt[0]) || Number.isNaN(pt[1])) continue;
+        const alwaysShow = ap.icao === selectedAirportIcao || ap.isHub || currentZoomScale >= 5.5;
+        const collides = placedLabelPoints.some(([px, py]) => Math.hypot(pt[0] - px, pt[1] - py) < minLabelSpacingPx);
+        if (alwaysShow || !collides) {
+          showLabelSet.add(ap.icao);
+          placedLabelPoints.push(pt);
+        }
+      }
+
       nodeGroups.select("text.map-label-city")
         .attr("text-anchor", "middle")
         .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"))
+        .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
         .attr("text-anchor", "middle")
+        .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"))
         .text((d) => d.icao);
 
       applyZoomScaledLabelStyles(currentZoomScale);
@@ -1723,11 +1760,12 @@
     });
 
     function renderControlsAndTables() {
-      const hubs = networkData.airports.filter((a) => a.isHub);
+      const activeAirportsAll = networkData.airports.filter((a) => a.active !== false);
+      const hubs = activeAirportsAll.filter((a) => a.isHub);
       const allAircraftTypes = [...new Set(networkData.routes.flatMap((r) => r.aircraftTypes || []).filter(Boolean))].sort();
 
       document.getElementById("network-summary").textContent =
-        `${hubs.length} hub${hubs.length === 1 ? "" : "s"} • ${networkData.airports.length} airports • ${networkData.routes.length} routes`;
+        `${hubs.length} hub${hubs.length === 1 ? "" : "s"} • ${activeAirportsAll.length}/${networkData.airports.length} active airports • ${networkData.routes.length} routes`;
 
       const emptyBanner = document.getElementById("empty-banner");
       if (networkData.airports.length === 0 && networkData.routes.length === 0) {
@@ -1764,13 +1802,18 @@
             <td>${a.continent}</td>
             <td>${a.lat.toFixed(2)}, ${a.lon.toFixed(2)}</td>
             <td>${a.isHub ? '<span class="badge-hub">Primary Hub</span>' : 'Destination'}</td>
+            <td>
+              <button type="button" class="btn btn-sm" data-toggle-airport="${a.icao}" style="color:${a.active === false ? 'var(--text-muted)' : 'var(--ok)'};">
+                ${a.active === false ? 'Inactive' : 'Active'}
+              </button>
+            </td>
             <td style="text-align:right;white-space:nowrap;">
               <button type="button" class="btn btn-sm" data-edit-airport="${a.icao}">Edit</button>
               <button type="button" class="btn btn-sm btn-danger" data-del-airport="${a.icao}">Remove</button>
             </td>
           </tr>
         `).join("")
-        : `<tr><td colspan="6" class="hint-text" style="text-align:center;padding:14px;">No airports in Firebase yet. Add your first airport above.</td></tr>`;
+        : `<tr><td colspan="7" class="hint-text" style="text-align:center;padding:14px;">No airports in Firebase yet. Add your first airport above.</td></tr>`;
 
       const airportMap = new Map(networkData.airports.map((a) => [a.icao, a]));
       const routesBody = document.getElementById("routes-table-body");
@@ -1811,6 +1854,7 @@
       const lon = parseFloat(document.getElementById("airport-lon").value);
       const continent = document.getElementById("airport-continent").value;
       const isHub = document.getElementById("airport-type").value === "hub";
+      const active = document.getElementById("airport-active").value === "true";
 
       if (!/^[A-Z0-9]{3,4}$/.test(icao)) {
         editorError.textContent = "ICAO/IATA code must be 3 to 4 alphanumeric characters.";
@@ -1821,7 +1865,7 @@
         return;
       }
 
-      const entry = { icao, city, lat, lon, continent, isHub };
+      const entry = { icao, city, lat, lon, continent, isHub, active };
       const existingIdx = networkData.airports.findIndex((a) => a.icao === icao);
       if (existingIdx >= 0) {
         networkData.airports[existingIdx] = entry;
@@ -1834,6 +1878,17 @@
     });
 
     document.getElementById("airports-table-body").addEventListener("click", (e) => {
+      const toggleIcao = e.target.getAttribute("data-toggle-airport");
+      if (toggleIcao) {
+        const ap = networkData.airports.find((a) => a.icao === toggleIcao);
+        if (ap) {
+          ap.active = ap.active === false ? true : false;
+          if (ap.active === false && selectedAirportIcao === toggleIcao) clearInspector();
+          renderAll();
+        }
+        return;
+      }
+
       const editIcao = e.target.getAttribute("data-edit-airport");
       if (editIcao) {
         const ap = networkData.airports.find((a) => a.icao === editIcao);
@@ -1844,6 +1899,7 @@
           document.getElementById("airport-lon").value = ap.lon;
           document.getElementById("airport-continent").value = ap.continent;
           document.getElementById("airport-type").value = ap.isHub ? "hub" : "dest";
+          document.getElementById("airport-active").value = ap.active === false ? "false" : "true";
         }
         return;
       }
