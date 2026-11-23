@@ -118,7 +118,7 @@
       z-index: 35;
       display: none;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 7px 12px;
       background: var(--surface);
       border: 1.5px solid var(--sandbox-accent);
@@ -176,6 +176,110 @@
       border: 1px solid rgba(0, 0, 0, 0.25);
       cursor: pointer;
       padding: 0;
+    }
+
+    .sandbox-overlay-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .sandbox-overlay-popover {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      min-width: 210px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 65;
+    }
+
+    .sandbox-overlay-popover.open {
+      display: flex;
+    }
+
+    .sandbox-overlay-title {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-muted);
+      padding: 2px 4px 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+
+    .sandbox-overlay-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 6px;
+      border-radius: 2px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sandbox-overlay-item:hover {
+      background: var(--surface-alt);
+    }
+
+    .sandbox-overlay-item input[type="checkbox"] {
+      accent-color: var(--sandbox-accent);
+      cursor: pointer;
+    }
+
+    .warn-callout {
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--sandbox-accent);
+      background: var(--sandbox-bg);
+      color: var(--ink);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .warn-callout strong {
+      color: var(--sandbox-accent);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .backup-box {
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .backup-link {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--deat-red);
+      text-decoration: underline;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .backup-link:hover {
+      color: var(--deat-red-hover);
     }
 
     /* Full-bleed Cartographic Canvas */
@@ -499,6 +603,16 @@
     .btn-primary:hover {
       background: var(--deat-red-hover);
       border-color: var(--deat-red-hover);
+    }
+
+    .btn-sandbox {
+      background: var(--sandbox-accent);
+      border-color: var(--sandbox-accent);
+      color: #ffffff;
+    }
+
+    .btn-sandbox:hover {
+      filter: brightness(0.94);
     }
 
     .btn-danger {
@@ -861,6 +975,10 @@
       max-width: 410px;
     }
 
+    .modal-card.modal-md {
+      max-width: 520px;
+    }
+
     .modal-header {
       padding: 13px 18px;
       border-bottom: 1px solid var(--border);
@@ -1169,6 +1287,21 @@
       <strong>SANDBOX:</strong> Click an airport to start a route · Click a route to delete
     </span>
     <span class="sandbox-divider"></span>
+
+    <div class="sandbox-overlay-wrap">
+      <button type="button" class="btn btn-sm" id="sandbox-overlay-btn" aria-expanded="false">
+        Overlays
+      </button>
+      <div class="sandbox-overlay-popover" id="sandbox-overlay-popover" role="group" aria-label="Sandbox map overlays">
+        <div class="sandbox-overlay-title">Map Overlays</div>
+        <label class="sandbox-overlay-item">
+          <span>Live Routes</span>
+          <input type="checkbox" id="sandbox-toggle-live-routes" />
+        </label>
+      </div>
+    </div>
+
+    <span class="sandbox-divider"></span>
     <label class="sandbox-color-label" for="sandbox-route-color">
       Color
       <input type="color" id="sandbox-route-color" value="#EE1C25" title="Color for new or selected sandbox route" />
@@ -1183,7 +1316,45 @@
     <button type="button" class="btn btn-sm" id="sandbox-import-btn">Import Sandbox</button>
     <button type="button" class="btn btn-sm" id="sandbox-export-btn">Export Sandbox</button>
     <button type="button" class="btn btn-sm btn-danger" id="sandbox-clear-btn">Clear Routes</button>
+    <button type="button" class="btn btn-sm btn-sandbox" id="sandbox-push-live-btn">Push to Live</button>
     <button type="button" class="btn btn-sm" id="sandbox-exit-btn">Exit Sandbox</button>
+  </div>
+
+  <!-- Push Sandbox Routes to Live Backend Confirmation Modal -->
+  <div class="modal-backdrop" id="sandbox-push-modal" aria-hidden="true">
+    <div class="modal-card modal-md" role="dialog" aria-modal="true" aria-labelledby="sandbox-push-title">
+      <div class="modal-header">
+        <h2 id="sandbox-push-title">Push Sandbox Routes to Live Network</h2>
+        <button type="button" class="btn btn-sm" id="close-sandbox-push-btn">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="warn-callout">
+          <strong>Warning — Live Backend Publication</strong>
+          <p style="margin-top:4px;" id="sandbox-push-summary">
+            You are about to add sandbox routes to the live network, display them on the live map, add them to the Network Editor, and publish to Firebase.
+          </p>
+        </div>
+
+        <div class="backup-box">
+          <div>
+            <div class="metric-key">Recommended Backup</div>
+            <div class="hint-text">Download a JSON backup of the current live network before publishing changes.</div>
+          </div>
+          <button type="button" class="backup-link" id="sandbox-push-backup-link">Download Backup JSON</button>
+        </div>
+
+        <label class="multi-filter-item" style="padding:4px 2px;">
+          <input type="checkbox" id="sandbox-push-confirm-check" />
+          <span>I understand this modifies the live network and I want to push these sandbox routes live.</span>
+        </label>
+
+        <div class="error-msg" id="sandbox-push-error"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm" id="cancel-sandbox-push-btn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirm-sandbox-push-btn" disabled>Confirm &amp; Push Live</button>
+      </div>
+    </div>
   </div>
 
   <!-- Left Flight / Station Inspector Rail -->
@@ -1207,7 +1378,7 @@
     <div class="key-entry"><span class="key-sector"></span> Sector</div>
   </div>
 
-  <!-- Bottom-Right Zoom & Theme Strip -->
+  <!-- Bottom-Right Zoom & Theme Strip (+ / - / Reset / Dark Mode) -->
   <div class="zoom-strip">
     <button type="button" class="zoom-btn" id="show-all-airports-btn" hidden style="display:none;" aria-pressed="false" title="Show all airports on the map, even when filtered">All Airports</button>
     <button type="button" class="zoom-btn" id="zoom-in-btn" title="Zoom in">+</button>
@@ -1419,10 +1590,14 @@
       routes: []
     };
 
-    // Sandbox Mode state (strictly local, never sent to Firebase)
+    // Sandbox Mode state (strictly local until user explicitly confirms pushing to live)
     let sandboxMode = false;
     let sandboxRoutes = []; // { origin, dest, color }
     let sandboxPendingOrigin = null;
+    const sandboxOverlays = {
+      liveRoutes: false
+      // Future overlay layers can be registered here
+    };
 
     let selectedAircraftSet = new Set();
     let currentZoomScale = 1;
@@ -1448,6 +1623,9 @@
     const sandboxModeBtn = document.getElementById("sandbox-mode-btn");
     const sandboxPromptTextEl = document.getElementById("sandbox-prompt-text");
     const sandboxColorInput = document.getElementById("sandbox-route-color");
+    const sandboxOverlayBtn = document.getElementById("sandbox-overlay-btn");
+    const sandboxOverlayPopover = document.getElementById("sandbox-overlay-popover");
+    const sandboxToggleLiveRoutes = document.getElementById("sandbox-toggle-live-routes");
 
     function updateSyncBadge() {
       if (sandboxMode) {
@@ -1578,9 +1756,6 @@
     }
 
     async function publishToFirebase() {
-      if (sandboxMode) {
-        throw new Error("Sandbox Mode is local-only and cannot publish to Firebase.");
-      }
       if (!firebaseReady || !stateDocRef) {
         throw new Error("Firebase is not configured in firebase-config.js.");
       }
@@ -1596,11 +1771,27 @@
         updatedAt: new Date().toISOString(),
         updatedBy: currentUser.email || currentUser.uid
       });
-      setSyncStatus("synced", "LIVE");
+      setSyncStatus(sandboxMode ? "local" : "synced", sandboxMode ? "SANDBOX LOCAL" : "LIVE");
+    }
+
+    function downloadLiveNetworkBackup() {
+      const backupPayload = {
+        backupType: "pre-sandbox-push-live-network",
+        exportedAt: new Date().toISOString(),
+        airports: networkData.airports,
+        routes: networkData.routes
+      };
+      const blob = new Blob([JSON.stringify(backupPayload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `deat-live-network-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     // =========================================================================
-    // SANDBOX MODE LOGIC (100% CLIENT-SIDE / LOCAL ONLY)
+    // SANDBOX MODE LOGIC (100% CLIENT-SIDE UNTIL CONFIRMED PUSH TO LIVE)
     // =========================================================================
     function updateSandboxPrompt() {
       if (!sandboxMode) return;
@@ -1623,6 +1814,8 @@
       }
       sandboxMode = Boolean(active);
       sandboxPendingOrigin = null;
+      sandboxOverlayPopover.classList.remove("open");
+      sandboxOverlayBtn.setAttribute("aria-expanded", "false");
       clearInspector();
       document.body.classList.toggle("sandbox-active", sandboxMode);
       document.getElementById("masthead-subtitle").textContent = sandboxMode
@@ -1696,6 +1889,99 @@
       renderMap();
     }
 
+    sandboxOverlayBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = sandboxOverlayPopover.classList.toggle("open");
+      sandboxOverlayBtn.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".sandbox-overlay-wrap")) {
+        sandboxOverlayPopover.classList.remove("open");
+        sandboxOverlayBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    sandboxToggleLiveRoutes.addEventListener("change", () => {
+      sandboxOverlays.liveRoutes = sandboxToggleLiveRoutes.checked;
+      renderMap();
+    });
+
+    const sandboxPushModal = document.getElementById("sandbox-push-modal");
+    const sandboxPushConfirmCheck = document.getElementById("sandbox-push-confirm-check");
+    const confirmSandboxPushBtn = document.getElementById("confirm-sandbox-push-btn");
+    const sandboxPushError = document.getElementById("sandbox-push-error");
+    const sandboxPushSummary = document.getElementById("sandbox-push-summary");
+
+    document.getElementById("sandbox-push-live-btn").addEventListener("click", () => {
+      sandboxPushError.textContent = "";
+      sandboxPushConfirmCheck.checked = false;
+      confirmSandboxPushBtn.disabled = true;
+      sandboxPushSummary.textContent =
+        `You are about to add ${sandboxRoutes.length} sandbox route${sandboxRoutes.length === 1 ? "" : "s"} to the live network, display them on the live map, add them to the Network Editor, and publish to Firebase.`;
+      openModal(sandboxPushModal);
+    });
+
+    document.getElementById("close-sandbox-push-btn").addEventListener("click", () => closeModal(sandboxPushModal));
+    document.getElementById("cancel-sandbox-push-btn").addEventListener("click", () => closeModal(sandboxPushModal));
+
+    sandboxPushConfirmCheck.addEventListener("change", () => {
+      confirmSandboxPushBtn.disabled = !sandboxPushConfirmCheck.checked;
+    });
+
+    document.getElementById("sandbox-push-backup-link").addEventListener("click", (e) => {
+      e.preventDefault();
+      downloadLiveNetworkBackup();
+    });
+
+    confirmSandboxPushBtn.addEventListener("click", async () => {
+      sandboxPushError.textContent = "";
+      if (!sandboxPushConfirmCheck.checked) {
+        sandboxPushError.textContent = "Please confirm that you want to push sandbox routes live.";
+        return;
+      }
+      confirmSandboxPushBtn.disabled = true;
+      try {
+        const validIcaos = new Set(networkData.airports.map((a) => a.icao));
+        for (const sr of sandboxRoutes) {
+          if (!validIcaos.has(sr.origin) || !validIcaos.has(sr.dest) || sr.origin === sr.dest) continue;
+          const color = /^#[0-9A-Fa-f]{6}$/.test(sr.color) ? sr.color : DEFAULT_ROUTE_COLOR;
+          const existingIdx = networkData.routes.findIndex(
+            (r) => (r.origin === sr.origin && r.dest === sr.dest) || (r.origin === sr.dest && r.dest === sr.origin)
+          );
+          if (existingIdx >= 0) {
+            networkData.routes[existingIdx] = {
+              ...networkData.routes[existingIdx],
+              origin: sr.origin,
+              dest: sr.dest,
+              color
+            };
+          } else {
+            networkData.routes.push({
+              origin: sr.origin,
+              dest: sr.dest,
+              aircraftTypes: ["A320neo"],
+              type: "Scheduled",
+              remarks: "Pushed from Sandbox Mode",
+              color
+            });
+          }
+        }
+
+        renderControlsAndTables();
+        await publishToFirebase();
+        sandboxRoutes = [];
+        sandboxPendingOrigin = null;
+        closeModal(sandboxPushModal);
+        setSandboxMode(false);
+      } catch (err) {
+        sandboxPushError.textContent = err.message || "Failed to push sandbox routes to live backend.";
+        setSyncStatus("error", "PUBLISH ERR");
+      } finally {
+        confirmSandboxPushBtn.disabled = !sandboxPushConfirmCheck.checked;
+      }
+    });
+
     sandboxModeBtn.addEventListener("click", () => {
       if (!currentUser) return;
       setSandboxMode(!sandboxMode);
@@ -1741,6 +2027,7 @@
         sandbox: true,
         exportedAt: new Date().toISOString(),
         defaultColor: sandboxColorInput.value,
+        overlays: { ...sandboxOverlays },
         routes: sandboxRoutes.map((r) => ({
           origin: r.origin,
           dest: r.dest,
@@ -1786,6 +2073,10 @@
         }
         if (parsed && typeof parsed.defaultColor === "string" && /^#[0-9A-Fa-f]{6}$/.test(parsed.defaultColor)) {
           sandboxColorInput.value = parsed.defaultColor;
+        }
+        if (parsed && parsed.overlays && typeof parsed.overlays.liveRoutes === "boolean") {
+          sandboxOverlays.liveRoutes = parsed.overlays.liveRoutes;
+          sandboxToggleLiveRoutes.checked = sandboxOverlays.liveRoutes;
         }
         sandboxRoutes = imported;
         sandboxPendingOrigin = null;
@@ -2071,12 +2362,23 @@
           return true;
         });
 
+        const overlayRoutes = sandboxOverlays.liveRoutes
+          ? networkData.routes.filter((r) => {
+              const o = airportByIcao.get(r.origin);
+              const d = airportByIcao.get(r.dest);
+              if (!o || !d) return false;
+              if (hubVal !== "ALL" && r.origin !== hubVal && r.dest !== hubVal) return false;
+              if (contVal !== "ALL" && o.continent !== contVal && d.continent !== contVal) return false;
+              return true;
+            })
+          : [];
+
         const visibleAirports = activeAirports.filter((a) => {
           if (contVal !== "ALL" && a.continent !== contVal) return false;
           return true;
         });
 
-        return { filteredRoutes: sandboxFiltered, visibleAirports, airportByIcao };
+        return { filteredRoutes: sandboxFiltered, overlayRoutes, visibleAirports, airportByIcao };
       }
 
       const filteredRoutes = networkData.routes.filter((r) => {
@@ -2109,7 +2411,7 @@
       }
 
       const visibleAirports = activeAirports.filter((a) => visibleIcaos.has(a.icao));
-      return { filteredRoutes, visibleAirports, airportByIcao };
+      return { filteredRoutes, overlayRoutes: [], visibleAirports, airportByIcao };
     }
 
     function renderMap() {
@@ -2138,7 +2440,7 @@
           .attr("stroke-width", 0.65);
       }
 
-      const { filteredRoutes, visibleAirports, airportByIcao } = getFilteredNetwork();
+      const { filteredRoutes, overlayRoutes = [], visibleAirports, airportByIcao } = getFilteredNetwork();
       const sandboxCounts = sandboxMode ? getSandboxRouteCountMap() : new Map();
 
       const lineBuilder = d3.line()
@@ -2147,6 +2449,29 @@
         .curve(d3.curveCatmullRom.alpha(0.5));
 
       const routeItems = [];
+
+      if (sandboxMode && overlayRoutes.length > 0) {
+        overlayRoutes.forEach((r) => {
+          const src = airportByIcao.get(r.origin);
+          const dst = airportByIcao.get(r.dest);
+          if (!src || !dst) return;
+          const rKey = `live:${r.origin}->${r.dest}`;
+          const segments = computeSplitFlightArcs(src, dst);
+          segments.forEach((coords, idx) => {
+            routeItems.push({
+              segKey: `${rKey}#${idx}`,
+              rKey,
+              route: r,
+              isOverlay: true,
+              coords,
+              color: r.color || DEFAULT_ROUTE_COLOR,
+              isHighlighted: false,
+              isDimmed: false
+            });
+          });
+        });
+      }
+
       filteredRoutes.forEach((r) => {
         const src = airportByIcao.get(r.origin);
         const dst = airportByIcao.get(r.dest);
@@ -2165,6 +2490,7 @@
             segKey: `${rKey}#${idx}`,
             rKey,
             route: r,
+            isOverlay: false,
             coords,
             color: sandboxMode ? routeColor : (isHighlighted ? HIGHLIGHT_ROUTE_COLOR : routeColor),
             isHighlighted,
@@ -2185,12 +2511,15 @@
       routeGroups.select("path.route-visible-path")
         .attr("d", (d) => lineBuilder(d.coords))
         .attr("stroke", (d) => d.color)
-        .attr("opacity", (d) => (d.isDimmed ? 0.16 : 0.94));
+        .attr("stroke-dasharray", (d) => (d.isOverlay ? "5,4" : null))
+        .attr("opacity", (d) => (d.isOverlay ? 0.36 : (d.isDimmed ? 0.16 : 0.94)));
 
       routeGroups.select("path.route-hit-area")
         .attr("d", (d) => lineBuilder(d.coords))
+        .style("pointer-events", (d) => (d.isOverlay ? "none" : "auto"))
         .on("click", (event, d) => {
           event.stopPropagation();
+          if (d.isOverlay) return;
           if (sandboxMode) {
             handleSandboxRouteClick(d.route);
           } else {
