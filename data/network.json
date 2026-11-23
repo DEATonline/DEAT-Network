@@ -1,16 +1,15 @@
 {
   "security": {
-    "salt": "deat_vienna_salt_2026",
-    "passwordHash": "08e69b5e8e0838c2f30fee62f375621fa937b8c9876b31cc04e08dab57af51bb",
-    "hint": "Default initial password: DEAT-Admin-2026! (Changeable after unlocking)"
+    "salt": "deat_salt_1795426463737",
+    "passwordHash": "cf2f9beced0dcef5493f7c4db37cfb8974034377c6ddd4c52f24ee8db085a2df"
   },
   "settings": {
     "airlineName": "DEAT",
     "networkSubtitle": "global passenger network",
     "brandColor": "#EE1C25",
     "defaultCenter": [
-      26.0,
-      48.0
+      26,
+      48
     ],
     "defaultZoom": 3
   },
@@ -131,7 +130,7 @@
     },
     {
       "icao": "LEMD",
-      "name": "Adolfo Su\u00e1rez Madrid\u2013Barajas Airport",
+      "name": "Adolfo Suárez Madrid–Barajas Airport",
       "city": "Madrid",
       "country": "Spain",
       "continent": "Europe",
@@ -331,7 +330,7 @@
     },
     {
       "icao": "WIII",
-      "name": "Soekarno\u2013Hatta International Airport",
+      "name": "Soekarno–Hatta International Airport",
       "city": "Jakarta",
       "country": "Indonesia",
       "continent": "Asia",
@@ -431,8 +430,8 @@
     },
     {
       "icao": "SBGR",
-      "name": "S\u00e3o Paulo/Guarulhos International Airport",
-      "city": "S\u00e3o Paulo",
+      "name": "São Paulo/Guarulhos International Airport",
+      "city": "São Paulo",
       "country": "Brazil",
       "continent": "South America",
       "lat": -23.4356,
@@ -472,6 +471,19 @@
   ],
   "routes": [
     {
+      "id": "r-1795425968798",
+      "origin": "VTBS",
+      "destination": "KLAX",
+      "aircraft": "A350-900",
+      "category": "Long-Haul",
+      "color": "#ee1c25",
+      "status": "Active",
+      "weight": 2,
+      "opacity": 1,
+      "notes": "",
+      "visible": true
+    },
+    {
       "id": "r-1",
       "origin": "LOWW",
       "destination": "EGLL",
@@ -482,7 +494,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "DE 388/389 \u2022 4x Daily Flagship Shuttle"
+      "notes": "DE 388/389 • 4x Daily Flagship Shuttle"
     },
     {
       "id": "r-2",
@@ -491,11 +503,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.88,
       "status": "Active",
       "visible": true,
-      "notes": "DE 112/113 \u2022 High-frequency commuter"
+      "notes": "DE 112/113 • High-frequency commuter"
     },
     {
       "id": "r-3",
@@ -508,7 +520,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "DE 140/141 \u2022 5x Daily"
+      "notes": "DE 140/141 • 5x Daily"
     },
     {
       "id": "r-4",
@@ -521,7 +533,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "DE 210/211 \u2022 3x Daily"
+      "notes": "DE 210/211 • 3x Daily"
     },
     {
       "id": "r-5",
@@ -530,11 +542,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.88,
       "status": "Active",
       "visible": true,
-      "notes": "DE 412/413 \u2022 Daily"
+      "notes": "DE 412/413 • Daily"
     },
     {
       "id": "r-6",
@@ -543,11 +555,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.88,
       "status": "Active",
       "visible": true,
-      "notes": "DE 180/181 \u2022 4x Daily"
+      "notes": "DE 180/181 • 4x Daily"
     },
     {
       "id": "r-7",
@@ -560,7 +572,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "DE 504/505 \u2022 2x Daily"
+      "notes": "DE 504/505 • 2x Daily"
     },
     {
       "id": "r-8",
@@ -573,7 +585,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "DE 302/303 \u2022 3x Daily"
+      "notes": "DE 302/303 • 3x Daily"
     },
     {
       "id": "r-9",
@@ -582,11 +594,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.88,
       "status": "Active",
       "visible": true,
-      "notes": "DE 610/611 \u2022 2x Daily"
+      "notes": "DE 610/611 • 2x Daily"
     },
     {
       "id": "r-10",
@@ -595,11 +607,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.88,
       "status": "Active",
       "visible": true,
-      "notes": "DE 720/721 \u2022 Daily"
+      "notes": "DE 720/721 • Daily"
     },
     {
       "id": "r-11",
@@ -612,7 +624,7 @@
       "opacity": 0.95,
       "status": "Active",
       "visible": true,
-      "notes": "DE 001/002 \u2022 Transatlantic Premier"
+      "notes": "DE 001/002 • Transatlantic Premier"
     },
     {
       "id": "r-12",
@@ -625,7 +637,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "DE 015/016 \u2022 Daily"
+      "notes": "DE 015/016 • Daily"
     },
     {
       "id": "r-13",
@@ -638,7 +650,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "DE 021/022 \u2022 5x Weekly"
+      "notes": "DE 021/022 • 5x Weekly"
     },
     {
       "id": "r-14",
@@ -651,111 +663,7 @@
       "opacity": 0.94,
       "status": "Active",
       "visible": true,
-      "notes": "DE 009/010 \u2022 4x Weekly"
-    },
-    {
-      "id": "r-15",
-      "origin": "LOWW",
-      "destination": "VTBS",
-      "aircraft": "A350-900",
-      "category": "Long-Haul",
-      "color": "#EE1C25",
-      "weight": 2.6,
-      "opacity": 0.95,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 081/082 \u2022 Europe-Asia Trunk"
-    },
-    {
-      "id": "r-16",
-      "origin": "LOWW",
-      "destination": "WSSS",
-      "aircraft": "A350-1000",
-      "category": "Long-Haul",
-      "color": "#EE1C25",
-      "weight": 2.6,
-      "opacity": 0.95,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 085/086 \u2022 Daily Nonstop"
-    },
-    {
-      "id": "r-17",
-      "origin": "LOWW",
-      "destination": "RJTT",
-      "aircraft": "B787-9",
-      "category": "Long-Haul",
-      "color": "#EE1C25",
-      "weight": 2.5,
-      "opacity": 0.94,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 091/092 \u2022 Daily"
-    },
-    {
-      "id": "r-18",
-      "origin": "LOWW",
-      "destination": "ZBAA",
-      "aircraft": "A350-900",
-      "category": "Long-Haul",
-      "color": "#EE1C25",
-      "weight": 2.4,
-      "opacity": 0.92,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 071/072 \u2022 5x Weekly"
-    },
-    {
-      "id": "r-19",
-      "origin": "LOWW",
-      "destination": "OMDB",
-      "aircraft": "A330-900neo",
-      "category": "Medium-Haul",
-      "color": "#EE1C25",
-      "weight": 2.3,
-      "opacity": 0.92,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 051/052 \u2022 Daily"
-    },
-    {
-      "id": "r-20",
-      "origin": "LOWW",
-      "destination": "HECA",
-      "aircraft": "A321XLR",
-      "category": "Medium-Haul",
-      "color": "#EE1C25",
-      "weight": 2.1,
-      "opacity": 0.9,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 041/042 \u2022 Daily"
-    },
-    {
-      "id": "r-21",
-      "origin": "LOWW",
-      "destination": "FAOR",
-      "aircraft": "A350-900",
-      "category": "Long-Haul",
-      "color": "#EE1C25",
-      "weight": 2.4,
-      "opacity": 0.92,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 045/046 \u2022 4x Weekly"
-    },
-    {
-      "id": "r-22",
-      "origin": "LOWW",
-      "destination": "SBGR",
-      "aircraft": "B787-9",
-      "category": "Long-Haul",
-      "color": "#EE1C25",
-      "weight": 2.4,
-      "opacity": 0.92,
-      "status": "Active",
-      "visible": true,
-      "notes": "DE 031/032 \u2022 3x Weekly"
+      "notes": "DE 009/010 • 4x Weekly"
     },
     {
       "id": "r-23",
@@ -768,7 +676,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Bangkok \u2013 Hanoi"
+      "notes": "Bangkok – Hanoi"
     },
     {
       "id": "r-24",
@@ -781,7 +689,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Bangkok \u2013 Chongqing"
+      "notes": "Bangkok – Chongqing"
     },
     {
       "id": "r-25",
@@ -794,7 +702,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Bangkok \u2013 Hong Kong"
+      "notes": "Bangkok – Hong Kong"
     },
     {
       "id": "r-26",
@@ -807,7 +715,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Bangkok \u2013 Manila"
+      "notes": "Bangkok – Manila"
     },
     {
       "id": "r-27",
@@ -816,11 +724,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Singapore \u2013 Kuala Lumpur"
+      "notes": "Singapore – Kuala Lumpur"
     },
     {
       "id": "r-28",
@@ -833,7 +741,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Singapore \u2013 Hong Kong"
+      "notes": "Singapore – Hong Kong"
     },
     {
       "id": "r-29",
@@ -846,7 +754,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Singapore \u2013 Seoul Incheon"
+      "notes": "Singapore – Seoul Incheon"
     },
     {
       "id": "r-30",
@@ -859,7 +767,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Singapore \u2013 Manila"
+      "notes": "Singapore – Manila"
     },
     {
       "id": "r-31",
@@ -872,7 +780,7 @@
       "opacity": 0.94,
       "status": "Active",
       "visible": true,
-      "notes": "Singapore \u2013 Sydney"
+      "notes": "Singapore – Sydney"
     },
     {
       "id": "r-32",
@@ -881,11 +789,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Jakarta \u2013 Bali"
+      "notes": "Jakarta – Bali"
     },
     {
       "id": "r-33",
@@ -898,7 +806,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Bali \u2013 Manila"
+      "notes": "Bali – Manila"
     },
     {
       "id": "r-34",
@@ -907,11 +815,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Kuala Lumpur \u2013 Phuket"
+      "notes": "Kuala Lumpur – Phuket"
     },
     {
       "id": "r-35",
@@ -920,11 +828,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Phuket \u2013 Dhaka"
+      "notes": "Phuket – Dhaka"
     },
     {
       "id": "r-36",
@@ -933,11 +841,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Dhaka \u2013 Paro"
+      "notes": "Dhaka – Paro"
     },
     {
       "id": "r-37",
@@ -946,11 +854,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Dhaka \u2013 Hanoi"
+      "notes": "Dhaka – Hanoi"
     },
     {
       "id": "r-38",
@@ -959,11 +867,11 @@
       "aircraft": "A321neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Dhaka \u2013 Chongqing"
+      "notes": "Dhaka – Chongqing"
     },
     {
       "id": "r-39",
@@ -976,7 +884,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Chongqing \u2013 Beijing"
+      "notes": "Chongqing – Beijing"
     },
     {
       "id": "r-40",
@@ -989,7 +897,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Chongqing \u2013 Taipei"
+      "notes": "Chongqing – Taipei"
     },
     {
       "id": "r-41",
@@ -1002,7 +910,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Beijing \u2013 Osaka Kansai"
+      "notes": "Beijing – Osaka Kansai"
     },
     {
       "id": "r-42",
@@ -1011,11 +919,11 @@
       "aircraft": "A321neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Seoul \u2013 Osaka Kansai"
+      "notes": "Seoul – Osaka Kansai"
     },
     {
       "id": "r-43",
@@ -1028,7 +936,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Seoul \u2013 Ho Chi Minh City"
+      "notes": "Seoul – Ho Chi Minh City"
     },
     {
       "id": "r-44",
@@ -1037,11 +945,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Osaka \u2013 Jeju"
+      "notes": "Osaka – Jeju"
     },
     {
       "id": "r-45",
@@ -1050,11 +958,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Osaka \u2013 Naha"
+      "notes": "Osaka – Naha"
     },
     {
       "id": "r-46",
@@ -1067,7 +975,7 @@
       "opacity": 0.92,
       "status": "Active",
       "visible": true,
-      "notes": "Osaka \u2013 Manila"
+      "notes": "Osaka – Manila"
     },
     {
       "id": "r-47",
@@ -1076,11 +984,11 @@
       "aircraft": "A320neo",
       "category": "Regional",
       "color": "#EE1C25",
-      "weight": 2.0,
+      "weight": 2,
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Naha \u2013 Taipei"
+      "notes": "Naha – Taipei"
     },
     {
       "id": "r-48",
@@ -1093,7 +1001,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Hong Kong \u2013 Manila"
+      "notes": "Hong Kong – Manila"
     },
     {
       "id": "r-49",
@@ -1106,7 +1014,7 @@
       "opacity": 0.9,
       "status": "Active",
       "visible": true,
-      "notes": "Ho Chi Minh City \u2013 Manila"
+      "notes": "Ho Chi Minh City – Manila"
     },
     {
       "id": "r-50",
