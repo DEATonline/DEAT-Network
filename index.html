@@ -16,10 +16,13 @@
       --border-strong: #cbd5e1;
       --text: #0f172a;
       --text-muted: #64748b;
+      --brand-subtext: #4B5056;
       --accent: #EE1C25;
-      --route-highlight: #0284c7;
+      --route-highlight: #EBEBEB;
       --land: #dce0e6;
       --land-stroke: #ffffff;
+      --marker-fill: #ffffff;
+      --label-halo: #ffffff;
       --ok: #16a34a;
       --warn: #d97706;
       --err: #dc2626;
@@ -27,6 +30,24 @@
       --control-h: 34px;
       --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
       --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.16);
+    }
+
+    body.dark-mode {
+      --bg: #0b0f17;
+      --surface: rgba(17, 24, 39, 0.94);
+      --surface-solid: #111827;
+      --surface-muted: #1e293b;
+      --border: #334155;
+      --border-strong: #475569;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --brand-subtext: #cbd5e1;
+      --land: #1f2937;
+      --land-stroke: #0b0f17;
+      --marker-fill: #0b0f17;
+      --label-halo: #0b0f17;
+      --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.55);
     }
 
     * {
@@ -50,7 +71,7 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
-      background: #ffffff;
+      background: var(--bg);
       overflow: hidden;
       z-index: 1;
     }
@@ -106,7 +127,7 @@
       font-size: 13px;
       font-weight: 700;
       font-style: italic;
-      color: #4B5056;
+      color: var(--brand-subtext);
       line-height: 1.15;
     }
 
@@ -174,7 +195,7 @@
       padding: 0 10px;
       border: 1px solid var(--border-strong);
       border-radius: 8px;
-      background: #ffffff;
+      background: var(--surface-solid);
       font-weight: 500;
       cursor: pointer;
     }
@@ -191,7 +212,7 @@
       min-width: 220px;
       max-height: 280px;
       overflow-y: auto;
-      background: #ffffff;
+      background: var(--surface-solid);
       border: 1px solid var(--border-strong);
       border-radius: 10px;
       box-shadow: var(--shadow-lg);
@@ -251,7 +272,7 @@
       padding: 0 12px;
       border-radius: 8px;
       border: 1px solid var(--border-strong);
-      background: #ffffff;
+      background: var(--surface-solid);
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
@@ -448,7 +469,7 @@
       padding: 7px 10px;
       border: 1px solid var(--border);
       border-radius: 8px;
-      background: #ffffff;
+      background: var(--surface-solid);
       cursor: pointer;
       font-size: 12px;
     }
@@ -463,28 +484,6 @@
       border-radius: 50%;
       flex-shrink: 0;
       display: inline-block;
-    }
-
-    /* Empty Network Overlay Prompt */
-    .empty-banner {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 20;
-      background: var(--surface);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px 24px;
-      text-align: center;
-      box-shadow: var(--shadow-lg);
-      max-width: 380px;
-      display: none;
-    }
-
-    .empty-banner.visible {
-      display: block;
     }
 
     /* Map SVG Elements */
@@ -597,7 +596,7 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 16px;
-      background: #ffffff;
+      background: var(--surface-solid);
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -652,7 +651,7 @@
       padding: 0 10px;
       border: 1px solid var(--border-strong);
       border-radius: 8px;
-      background: #ffffff;
+      background: var(--surface-solid);
       outline: none;
     }
 
@@ -790,14 +789,8 @@
       </div>
     </div>
 
+    <button type="button" class="btn" id="dark-mode-btn" title="Toggle dark mode">Dark Mode</button>
     <button type="button" class="btn btn-primary" id="open-editor-btn">Network Editor</button>
-  </div>
-
-  <!-- Empty Database Prompt (shown only when Firestore has 0 routes/airports yet) -->
-  <div class="empty-banner" id="empty-banner">
-    <h3 style="font-size:15px;margin-bottom:6px;">No Routes Published Yet</h3>
-    <p class="hint-text" style="margin-bottom:14px;">This network loads exclusively from your Firebase Firestore database. Open the Network Editor to add your airports and routes.</p>
-    <button type="button" class="btn btn-primary" id="empty-open-editor-btn">Open Network Editor</button>
   </div>
 
   <!-- Interactive Airport / Route Inspector Card -->
@@ -1328,7 +1321,7 @@
       const k = Math.max(1, scale || 1);
       const invK = 1 / k;
       routesGroup.selectAll("path.route-visible-path")
-        .attr("stroke-width", (d) => ((d.isHighlighted ? 2.1 : 1.15) * invK).toFixed(4));
+        .attr("stroke-width", (d) => ((d.isHighlighted ? 4 : 2) * invK).toFixed(4));
       routesGroup.selectAll("path.route-hit-area")
         .attr("stroke-width", (14 * invK).toFixed(4));
       landGroup.selectAll("path.land-path")
@@ -1414,18 +1407,19 @@
       const pathGenerator = d3.geoPath().projection(projection);
 
       if (worldLandGeoJson) {
+        const isDark = document.body.classList.contains("dark-mode");
         landGroup.selectAll("path")
           .data(worldLandGeoJson.features)
           .join("path")
           .attr("class", "land-path")
           .attr("d", pathGenerator)
-          .attr("fill", "#dce0e6")
-          .attr("stroke", "#ffffff")
+          .attr("fill", isDark ? "#1f2937" : "#dce0e6")
+          .attr("stroke", isDark ? "#0b0f17" : "#ffffff")
           .attr("stroke-width", 0.65);
       }
 
       const { filteredRoutes, visibleAirports, airportByIcao } = getFilteredNetwork();
-      const highlightColor = "#0284c7";
+      const highlightColor = "#EBEBEB";
 
       const lineBuilder = d3.line()
         .x((d) => projection(d)[0])
@@ -1505,21 +1499,27 @@
           selectAirport(d);
         });
 
+      const isDarkMode = document.body.classList.contains("dark-mode");
+      const markerFill = isDarkMode ? "#0b0f17" : "#ffffff";
+      const labelHalo = isDarkMode ? "#0b0f17" : "#ffffff";
+
       nodeGroups.select("circle.outer-ring")
-        .attr("fill", "#ffffff")
-        .attr("stroke", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"));
+        .attr("fill", markerFill)
+        .attr("stroke", (d) => (d.icao === selectedAirportIcao ? "#EE1C25" : "#EE1C25"));
 
       nodeGroups.select("circle.inner-dot")
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"));
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? "#EE1C25" : "#EE1C25"));
 
       nodeGroups.select("text.map-label-city")
         .attr("text-anchor", "middle")
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"))
+        .style("stroke", labelHalo)
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? (isDarkMode ? "#f8fafc" : "#0f172a") : "#EE1C25"))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
         .attr("text-anchor", "middle")
-        .attr("fill", "#64748b")
+        .style("stroke", labelHalo)
+        .attr("fill", isDarkMode ? "#94a3b8" : "#64748b")
         .text((d) => d.icao);
 
       applyConstantRouteWeights(currentZoomScale);
@@ -1801,7 +1801,6 @@
     }
 
     document.getElementById("open-editor-btn").addEventListener("click", handleOpenEditor);
-    document.getElementById("empty-open-editor-btn").addEventListener("click", handleOpenEditor);
     document.getElementById("close-auth-btn").addEventListener("click", () => closeModal(authModal));
     document.getElementById("close-editor-btn").addEventListener("click", () => closeModal(editorModal));
 
@@ -1836,13 +1835,6 @@
 
       document.getElementById("network-summary").textContent =
         `${hubs.length} hub${hubs.length === 1 ? "" : "s"} • ${activeAirportsAll.length}/${networkData.airports.length} active airports • ${networkData.routes.length} routes`;
-
-      const emptyBanner = document.getElementById("empty-banner");
-      if (networkData.airports.length === 0 && networkData.routes.length === 0) {
-        emptyBanner.classList.add("visible");
-      } else {
-        emptyBanner.classList.remove("visible");
-      }
 
       const hubSel = document.getElementById("filter-hub");
       const prevHub = hubSel.value;
@@ -2107,6 +2099,23 @@
       a.click();
       URL.revokeObjectURL(url);
     });
+
+    const darkModeBtn = document.getElementById("dark-mode-btn");
+    function setDarkMode(enabled) {
+      document.body.classList.toggle("dark-mode", enabled);
+      darkModeBtn.textContent = enabled ? "Light Mode" : "Dark Mode";
+      try { localStorage.setItem("deat_dark_mode", enabled ? "1" : "0"); } catch (_) {}
+      renderMap();
+    }
+    darkModeBtn.addEventListener("click", () => {
+      setDarkMode(!document.body.classList.contains("dark-mode"));
+    });
+    try {
+      if (localStorage.getItem("deat_dark_mode") === "1") {
+        document.body.classList.add("dark-mode");
+        darkModeBtn.textContent = "Light Mode";
+      }
+    } catch (_) {}
 
     // Boot
     renderAll();
