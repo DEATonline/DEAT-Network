@@ -18,7 +18,7 @@
       --text-muted: #64748b;
       --brand-subtext: #4B5056;
       --accent: #EE1C25;
-      --route-highlight: #EBEBEB;
+      --route-highlight: #FF131B;
       --land: #dce0e6;
       --land-stroke: #ffffff;
       --marker-fill: #ffffff;
@@ -789,7 +789,6 @@
       </div>
     </div>
 
-    <button type="button" class="btn" id="dark-mode-btn" title="Toggle dark mode">Dark Mode</button>
     <button type="button" class="btn btn-primary" id="open-editor-btn">Network Editor</button>
   </div>
 
@@ -814,11 +813,12 @@
     <div class="legend-item"><span class="legend-line"></span> Flight Route</div>
   </div>
 
-  <!-- Floating Zoom Controls -->
+  <!-- Floating Zoom & Theme Controls -->
   <div class="hud-zoom">
     <button type="button" class="btn btn-sm" id="zoom-in-btn" title="Zoom in">+</button>
     <button type="button" class="btn btn-sm" id="zoom-out-btn" title="Zoom out">&minus;</button>
     <button type="button" class="btn btn-sm" id="zoom-reset-btn" title="Reset global view">Reset</button>
+    <button type="button" class="btn btn-sm" id="dark-mode-btn" title="Toggle dark mode">Dark Mode</button>
   </div>
 
   <!-- Authentication Modal -->
@@ -1419,7 +1419,7 @@
       }
 
       const { filteredRoutes, visibleAirports, airportByIcao } = getFilteredNetwork();
-      const highlightColor = "#EBEBEB";
+      const highlightColor = "#FF131B";
 
       const lineBuilder = d3.line()
         .x((d) => projection(d)[0])
@@ -1519,7 +1519,7 @@
       nodeGroups.select("text.map-label-icao")
         .attr("text-anchor", "middle")
         .style("stroke", labelHalo)
-        .attr("fill", isDarkMode ? "#94a3b8" : "#64748b")
+        .attr("fill", isDarkMode ? "#e2e8f0" : "#64748b")
         .text((d) => d.icao);
 
       applyConstantRouteWeights(currentZoomScale);
