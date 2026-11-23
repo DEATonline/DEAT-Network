@@ -541,12 +541,18 @@
       border: none;
       border-right: 1px solid var(--border);
       background: transparent;
+      color: var(--ink);
       font-family: var(--font-mono);
       font-size: 10.5px;
       font-weight: 600;
+      line-height: 1;
       text-transform: uppercase;
       cursor: pointer;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
     }
 
     .zoom-btn:last-child {
@@ -1005,7 +1011,7 @@
 
   <!-- Bottom-Right Zoom & Theme Strip -->
   <div class="zoom-strip">
-    <button type="button" class="zoom-btn" id="show-all-airports-btn" aria-pressed="false" title="Show all airports on the map, even when filtered">All Airports</button>
+    <button type="button" class="zoom-btn" id="show-all-airports-btn" hidden style="display:none;" aria-pressed="false" title="Show all airports on the map, even when filtered">All Airports</button>
     <button type="button" class="zoom-btn" id="zoom-in-btn" title="Zoom in">+</button>
     <button type="button" class="zoom-btn" id="zoom-out-btn" title="Zoom out">&minus;</button>
     <button type="button" class="zoom-btn" id="zoom-reset-btn" title="Reset global view">Reset</button>
@@ -1557,18 +1563,47 @@
       svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
     });
 
-    const showAllAirportsBtn = document.getElementById("show-all-airports-btn");
-    function syncAllAirportsBtn() {
-      const enabled = Boolean(showAllAirports);
-      showAllAirportsBtn.textContent = "All Airports";
-      showAllAirportsBtn.setAttribute("aria-pressed", String(enabled));
-      showAllAirportsBtn.classList.toggle("is-active", enabled);
-    }
-    showAllAirportsBtn.addEventListener("click", () => {
+    const zoomStripEl = document.querySelector(".zoom-strip");
+    let showAllAirportsBtn = document.getElementById("show-all-airports-btn");
+
+    function handleToggleAllAirports() {
+      if (!currentUser) {
+        showAllAirports = false;
+        syncAllAirportsBtn();
+        renderMap();
+        return;
+      }
       showAllAirports = !showAllAirports;
       syncAllAirportsBtn();
       renderMap();
-    });
+    }
+
+    function syncAllAirportsBtn() {
+      const signedIn = Boolean(currentUser);
+      const enabled = Boolean(signedIn && showAllAirports);
+      if (!signedIn) {
+        showAllAirports = false;
+        if (showAllAirportsBtn && showAllAirportsBtn.parentNode) {
+          showAllAirportsBtn.parentNode.removeChild(showAllAirportsBtn);
+        }
+        showAllAirportsBtn = null;
+        return;
+      }
+      if (!showAllAirportsBtn || !showAllAirportsBtn.parentNode) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "zoom-btn";
+        btn.id = "show-all-airports-btn";
+        btn.title = "Show all airports on the map, even when filtered";
+        btn.textContent = "All Airports";
+        btn.addEventListener("click", handleToggleAllAirports);
+        zoomStripEl.insertBefore(btn, zoomStripEl.firstChild);
+        showAllAirportsBtn = btn;
+      }
+      showAllAirportsBtn.style.display = "";
+      showAllAirportsBtn.setAttribute("aria-pressed", String(enabled));
+      showAllAirportsBtn.classList.toggle("is-active", enabled);
+    }
 
     function getFilteredNetwork() {
       const hubVal = document.getElementById("filter-hub").value;
@@ -1576,7 +1611,7 @@
       const typeVal = document.getElementById("filter-type").value;
       const hasAircraftFilter = selectedAircraftSet.size > 0;
 
-      const includeAll = Boolean(showAllAirports);
+      const includeAll = Boolean(currentUser && showAllAirports);
       const activeAirports = includeAll
         ? [...networkData.airports]
         : networkData.airports.filter((a) => a.active !== false);
@@ -2018,6 +2053,10 @@
       } else {
         badge.textContent = "";
         signoutBtn.style.display = "none";
+        if (showAllAirports) {
+          showAllAirports = false;
+          renderMap();
+        }
       }
       syncAllAirportsBtn();
     }
@@ -2228,6 +2267,7 @@
     }
 
     function renderAll() {
+      syncAllAirportsBtn();
       renderControlsAndTables();
       renderMap();
     }
