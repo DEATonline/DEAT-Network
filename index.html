@@ -4,50 +4,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DEAT — Global Route Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700;1,800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <style>
     :root {
       --bg: #ffffff;
-      --surface: rgba(255, 255, 255, 0.94);
-      --surface-solid: #ffffff;
-      --surface-muted: #f8fafc;
-      --border: #e2e8f0;
-      --border-strong: #cbd5e1;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --brand-subtext: #4B5056;
-      --accent: #EE1C25;
+      --surface: #ffffff;
+      --surface-alt: #f7f8fa;
+      --border: #dfe3e8;
+      --border-strong: #c5ccd4;
+      --ink: #16181d;
+      --ink-secondary: #4b525c;
+      --ink-muted: #767e8a;
+      --deat-red: #EE1C25;
+      --deat-red-hover: #cc121a;
       --route-highlight: #FF131B;
-      --land: #dce0e6;
+      --land: #d8dce2;
       --land-stroke: #ffffff;
       --marker-fill: #ffffff;
       --label-halo: #ffffff;
-      --ok: #16a34a;
-      --warn: #d97706;
+      --ok: #15803d;
+      --warn: #b45309;
       --err: #dc2626;
-      --radius: 10px;
-      --control-h: 34px;
-      --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.06);
-      --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.16);
+      --radius: 3px;
+      --bar-h: 46px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
     }
 
     body.dark-mode {
-      --bg: #0b0f17;
-      --surface: rgba(17, 24, 39, 0.94);
-      --surface-solid: #111827;
-      --surface-muted: #1e293b;
-      --border: #334155;
-      --border-strong: #475569;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --brand-subtext: #cbd5e1;
-      --land: #1f2937;
-      --land-stroke: #0b0f17;
-      --marker-fill: #0b0f17;
-      --label-halo: #0b0f17;
-      --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.35);
-      --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.55);
+      --bg: #0c0f14;
+      --surface: #12161f;
+      --surface-alt: #181d29;
+      --border: #262d3d;
+      --border-strong: #394359;
+      --ink: #f1f5f9;
+      --ink-secondary: #cbd5e1;
+      --ink-muted: #8b95a5;
+      --land: #1c222e;
+      --land-stroke: #0c0f14;
+      --marker-fill: #0c0f14;
+      --label-halo: #0c0f14;
     }
 
     * {
@@ -60,12 +60,13 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      font-family: var(--font-sans);
       background: var(--bg);
-      color: var(--text);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Full-bleed centerpiece map canvas */
+    /* Full-bleed Cartographic Canvas */
     main.map-viewport {
       position: fixed;
       inset: 0;
@@ -87,139 +88,166 @@
       cursor: grabbing;
     }
 
-    /* Floating DEAT Brand & Sync Pill (Top-Left) */
-    .hud-brand {
+    /* Top Structural Masthead (Left: DEAT Identity + Telemetry Strip) */
+    .masthead {
       position: fixed;
-      top: 16px;
-      left: 16px;
+      top: 14px;
+      left: 14px;
       z-index: 30;
       display: flex;
-      align-items: center;
-      gap: 11px;
+      align-items: stretch;
+      height: var(--bar-h);
       background: var(--surface);
-      backdrop-filter: blur(10px);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 6px 14px 6px 6px;
-      box-shadow: var(--shadow-sm);
+      border-radius: var(--radius);
     }
 
-    .deat-badge {
-      background: #EE1C25;
+    .deat-mark {
+      background: var(--deat-red);
       color: #ffffff;
-      border-radius: 8px;
-      padding: 7px 11px;
+      padding: 0 14px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
+      border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
       flex-shrink: 0;
     }
 
     .deat-wordmark {
       font-weight: 800;
       font-style: italic;
-      font-size: 15px;
+      font-size: 16px;
       letter-spacing: 0.04em;
       line-height: 1;
     }
 
-    .brand-title {
-      font-size: 13px;
+    .masthead-meta {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 14px;
+      border-right: 1px solid var(--border);
+    }
+
+    .masthead-title {
+      font-size: 11.5px;
       font-weight: 700;
       font-style: italic;
-      color: var(--brand-subtext);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
       line-height: 1.15;
     }
 
-    .brand-sub {
-      font-size: 11px;
-      color: var(--text-muted);
+    .masthead-telemetry {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink-muted);
       margin-top: 2px;
-    }
-
-    /* Floating Filter & Action Bar (Top-Right) */
-    .hud-controls {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      background: var(--surface);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px 10px;
-      box-shadow: var(--shadow-sm);
-      max-width: calc(100vw - 32px);
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: var(--control-h);
-      padding: 0 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--surface-muted);
-      font-size: 11.5px;
-      font-weight: 600;
-      color: var(--text-muted);
       white-space: nowrap;
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--text-muted);
+    .sync-readout {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      white-space: nowrap;
     }
 
-    .status-pill[data-state="synced"] .status-dot { background: var(--ok); }
-    .status-pill[data-state="saving"] .status-dot { background: var(--warn); }
-    .status-pill[data-state="local"] .status-dot { background: var(--warn); }
-    .status-pill[data-state="error"] .status-dot { background: var(--err); }
+    .sync-led {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ink-muted);
+      flex-shrink: 0;
+    }
+
+    .sync-readout[data-state="synced"] .sync-led { background: var(--ok); }
+    .sync-readout[data-state="saving"] .sync-led { background: var(--warn); }
+    .sync-readout[data-state="local"] .sync-led { background: var(--warn); }
+    .sync-readout[data-state="error"] .sync-led { background: var(--err); }
+
+    /* Top Structural Control Rail (Right: Filters + Editor) */
+    .control-rail {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 30;
+      height: var(--bar-h);
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: visible;
+    }
 
     select, input, button {
       font-family: inherit;
-      font-size: 12.5px;
-      color: var(--text);
+      font-size: 12px;
+      color: var(--ink);
     }
 
-    .hud-select {
-      height: var(--control-h);
-      padding: 0 10px;
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      background: var(--surface-solid);
+    .rail-select {
+      height: 100%;
+      padding: 0 11px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: transparent;
+      font-family: var(--font-mono);
+      font-size: 11px;
       font-weight: 500;
       cursor: pointer;
+      outline: none;
     }
 
-    /* Toggleable Multi-Aircraft Filter Dropdown */
+    .rail-select:hover,
+    .rail-select:focus {
+      background: var(--surface-alt);
+    }
+
     .multi-filter-wrap {
       position: relative;
+      height: 100%;
+    }
+
+    .multi-filter-btn {
+      height: 100%;
+      padding: 0 12px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: transparent;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .multi-filter-btn:hover {
+      background: var(--surface-alt);
     }
 
     .multi-filter-popover {
       position: absolute;
       top: calc(100% + 6px);
       right: 0;
-      min-width: 220px;
-      max-height: 280px;
+      min-width: 210px;
+      max-height: 270px;
       overflow-y: auto;
-      background: var(--surface-solid);
+      background: var(--surface);
       border: 1px solid var(--border-strong);
-      border-radius: 10px;
-      box-shadow: var(--shadow-lg);
-      padding: 8px;
+      border-radius: var(--radius);
+      padding: 6px;
       display: none;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
       z-index: 60;
     }
 
@@ -227,266 +255,309 @@
       display: flex;
     }
 
-    .multi-filter-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .multi-filter-item:hover {
-      background: var(--surface-muted);
-    }
-
-    .multi-filter-item input[type="checkbox"] {
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-
     .multi-filter-actions {
       display: flex;
       justify-content: space-between;
-      padding: 4px 6px 6px;
+      padding: 3px 6px 6px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 2px;
-      font-size: 11px;
+      margin-bottom: 3px;
     }
 
     .multi-filter-link {
       background: none;
       border: none;
-      color: var(--route-highlight);
+      font-family: var(--font-mono);
+      font-size: 10px;
       font-weight: 600;
+      text-transform: uppercase;
+      color: var(--deat-red);
+      cursor: pointer;
+    }
+
+    .multi-filter-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 6px;
+      font-family: var(--font-mono);
       font-size: 11px;
       cursor: pointer;
-      padding: 0;
+      user-select: none;
+    }
+
+    .multi-filter-item:hover {
+      background: var(--surface-alt);
+    }
+
+    .multi-filter-item input[type="checkbox"] {
+      accent-color: var(--deat-red);
+      cursor: pointer;
+    }
+
+    .rail-editor-btn {
+      height: 100%;
+      padding: 0 14px;
+      border: none;
+      background: var(--deat-red);
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0;
+      white-space: nowrap;
+    }
+
+    .rail-editor-btn:hover {
+      background: var(--deat-red-hover);
     }
 
     .btn {
-      height: var(--control-h);
-      padding: 0 12px;
-      border-radius: 8px;
+      height: 32px;
+      padding: 0 11px;
+      border-radius: var(--radius);
       border: 1px solid var(--border-strong);
-      background: var(--surface-solid);
+      background: var(--surface);
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      transition: all 0.15s ease;
+      gap: 5px;
       white-space: nowrap;
     }
 
     .btn:hover {
-      background: var(--surface-muted);
-      border-color: #94a3b8;
+      background: var(--surface-alt);
     }
 
     .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: var(--deat-red);
+      border-color: var(--deat-red);
       color: #ffffff;
     }
 
     .btn-primary:hover {
-      background: #b91c1c;
-      border-color: #b91c1c;
+      background: var(--deat-red-hover);
+      border-color: var(--deat-red-hover);
     }
 
     .btn-danger {
       color: var(--err);
-      border-color: #fecaca;
-      background: #fef2f2;
+      border-color: rgba(220, 38, 38, 0.35);
+      background: transparent;
     }
 
     .btn-danger:hover {
-      background: #fee2e2;
+      background: rgba(220, 38, 38, 0.08);
     }
 
     .btn-sm {
-      height: 28px;
+      height: 26px;
       padding: 0 8px;
-      font-size: 12px;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
     }
 
-    /* Floating Legend (Bottom-Left) */
-    .hud-legend {
+    /* Flight / Station Inspector Rail (Left) */
+    .inspector-rail {
       position: fixed;
-      bottom: 16px;
-      left: 16px;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: var(--surface);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 12px;
-      font-size: 11.5px;
-      color: var(--text-muted);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .legend-hub {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 2.5px solid var(--accent);
-      background: #ffffff;
-    }
-
-    .legend-dest {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      border: 2px solid var(--accent);
-      background: #ffffff;
-    }
-
-    .legend-line {
-      width: 18px;
-      height: 2.5px;
-      background: var(--accent);
-      border-radius: 2px;
-    }
-
-    /* Floating Zoom Controls (Bottom-Right) */
-    .hud-zoom {
-      position: fixed;
-      bottom: 16px;
-      right: 16px;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--surface);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 6px;
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Interactive Inspector Drawer */
-    .inspector-card {
-      position: fixed;
-      top: 78px;
-      left: 16px;
-      width: 320px;
-      max-height: calc(100vh - 145px);
+      top: 72px;
+      left: 14px;
+      width: 312px;
+      max-height: calc(100vh - 122px);
       overflow-y: auto;
       z-index: 35;
       background: var(--surface);
-      backdrop-filter: blur(12px);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: var(--shadow-lg);
-      padding: 16px;
+      border-left: 3px solid var(--deat-red);
+      border-radius: var(--radius);
+      padding: 12px 14px;
       display: none;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
-    .inspector-card.open {
+    .inspector-rail.open {
       display: flex;
     }
 
-    .inspector-header {
+    .inspector-head {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 10px;
     }
 
-    .inspector-kicker {
-      font-size: 10.5px;
+    .inspector-tag {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--accent);
+      letter-spacing: 0.08em;
+      color: var(--deat-red);
     }
 
-    .inspector-title {
-      font-size: 16px;
-      font-weight: 800;
+    .inspector-name {
+      font-size: 14px;
+      font-weight: 700;
       text-transform: capitalize;
       margin-top: 2px;
     }
 
-    .inspector-grid {
+    .inspector-metrics {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      border-top: 1px solid var(--border);
+      border-left: 1px solid var(--border);
     }
 
-    .inspector-stat {
-      background: var(--surface-muted);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 10px;
+    .metric-cell {
+      padding: 7px 8px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-alt);
     }
 
-    .inspector-stat-label {
-      font-size: 10px;
-      font-weight: 700;
+    .metric-key {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 600;
       text-transform: uppercase;
-      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      color: var(--ink-muted);
     }
 
-    .inspector-stat-val {
-      font-size: 12.5px;
-      font-weight: 700;
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
       margin-top: 2px;
       word-break: break-word;
     }
 
-    .inspector-list {
+    .inspector-sectors {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
 
-    .inspector-route-item {
+    .sector-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 7px 10px;
+      padding: 6px 8px;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface-solid);
+      border-radius: var(--radius);
+      font-size: 11.5px;
       cursor: pointer;
-      font-size: 12px;
     }
 
-    .inspector-route-item:hover {
-      border-color: var(--route-highlight);
+    .sector-row:hover {
+      background: var(--surface-alt);
+      border-color: var(--border-strong);
     }
 
-    .route-swatch-dot {
-      width: 9px;
-      height: 9px;
+    .swatch-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
       display: inline-block;
     }
 
-    /* Map SVG Elements */
+    /* Bottom-Left Cartographic Legend */
+    .carto-key {
+      position: fixed;
+      bottom: 14px;
+      left: 14px;
+      z-index: 30;
+      height: 32px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-secondary);
+    }
+
+    .key-entry {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .key-hub {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 2px solid var(--deat-red);
+      background: var(--marker-fill);
+    }
+
+    .key-station {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 1.5px solid var(--deat-red);
+      background: var(--marker-fill);
+    }
+
+    .key-sector {
+      width: 16px;
+      height: 2px;
+      background: var(--deat-red);
+    }
+
+    /* Bottom-Right Zoom & Theme Strip (+ / - / Reset / Dark Mode) */
+    .zoom-strip {
+      position: fixed;
+      bottom: 14px;
+      right: 14px;
+      z-index: 30;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .zoom-btn {
+      height: 100%;
+      padding: 0 10px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: transparent;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .zoom-btn:last-child {
+      border-right: none;
+    }
+
+    .zoom-btn:hover {
+      background: var(--surface-alt);
+    }
+
+    /* Map SVG Styling */
     .airport-node {
       cursor: pointer;
     }
@@ -494,7 +565,6 @@
     .route-hit-area {
       fill: none;
       stroke: transparent;
-      stroke-width: 14px;
       cursor: pointer;
     }
 
@@ -502,7 +572,7 @@
       fill: none;
       stroke-linecap: round;
       pointer-events: none;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.14s ease;
     }
 
     .map-label-city {
@@ -510,16 +580,14 @@
       font-style: italic;
       pointer-events: none;
       paint-order: stroke;
-      stroke: #ffffff;
       stroke-linejoin: round;
     }
 
     .map-label-icao {
+      font-family: var(--font-mono);
       font-weight: 700;
-      fill: #1e293b;
       pointer-events: none;
       paint-order: stroke;
-      stroke: #ffffff;
       stroke-linejoin: round;
     }
 
@@ -527,7 +595,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.55);
+      background: rgba(12, 15, 20, 0.62);
       display: none;
       align-items: center;
       justify-content: center;
@@ -540,51 +608,52 @@
     }
 
     .modal-card {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      box-shadow: var(--shadow-lg);
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
       width: 100%;
       max-width: 1020px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      position: relative;
       z-index: 1001;
     }
 
     .modal-card.modal-sm {
-      max-width: 420px;
+      max-width: 410px;
     }
 
     .modal-header {
-      padding: 16px 20px;
+      padding: 13px 18px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      background: var(--surface-muted);
+      background: var(--surface-alt);
     }
 
     .modal-header h2 {
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 700;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .modal-body {
-      padding: 20px;
+      padding: 16px 18px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
     }
 
     .modal-footer {
-      padding: 12px 20px;
+      padding: 11px 18px;
       border-top: 1px solid var(--border);
-      background: var(--surface-muted);
+      background: var(--surface-alt);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -594,17 +663,21 @@
 
     .editor-section {
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      background: var(--surface-solid);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: var(--surface);
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     .editor-section h3 {
-      font-size: 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-secondary);
     }
 
     .form-grid-airport {
@@ -631,67 +704,96 @@
     .field {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       min-width: 0;
     }
 
     .field label {
-      font-size: 10.5px;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: var(--text-muted);
+      color: var(--ink-muted);
     }
 
     .field input,
     .field select {
       width: 100%;
       min-width: 0;
-      height: var(--control-h);
-      padding: 0 10px;
+      height: 32px;
+      padding: 0 9px;
       border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      background: var(--surface-solid);
+      border-radius: var(--radius);
+      background: var(--surface);
       outline: none;
     }
 
     .field input[type="color"] {
-      padding: 2px 4px;
+      padding: 2px 3px;
+      width: 42px;
       cursor: pointer;
     }
 
     .field input:focus,
     .field select:focus {
-      border-color: var(--accent);
+      border-color: var(--deat-red);
     }
 
     .table-wrap {
       width: 100%;
       overflow-x: auto;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12.5px;
+      font-size: 12px;
     }
 
     th, td {
-      padding: 8px 10px;
+      padding: 7px 10px;
       text-align: left;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
 
-    th {
-      background: var(--surface-muted);
-      font-size: 10.5px;
+    .sort-th-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      color: var(--text-muted);
+      color: var(--ink-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sort-th-btn:hover,
+    .sort-th-btn.active {
+      color: var(--ink);
+    }
+
+    .sort-ind {
+      font-size: 9px;
+      color: var(--deat-red);
+    }
+
+    th {
+      background: var(--surface-alt);
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-muted);
     }
 
     tr:last-child td {
@@ -700,72 +802,75 @@
 
     .badge-hub {
       display: inline-block;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: #fee2e2;
-      color: var(--accent);
-      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 2px;
+      background: rgba(238, 28, 37, 0.12);
+      color: var(--deat-red);
+      font-family: var(--font-mono);
+      font-size: 10px;
       font-weight: 700;
+      text-transform: uppercase;
     }
 
     .ac-chip {
       display: inline-block;
-      padding: 2px 6px;
+      padding: 1px 5px;
       margin: 1px 2px 1px 0;
-      border-radius: 5px;
-      background: var(--surface-muted);
+      border-radius: 2px;
+      background: var(--surface-alt);
       border: 1px solid var(--border);
-      font-size: 11px;
+      font-family: var(--font-mono);
+      font-size: 10px;
       font-weight: 600;
     }
 
     .error-msg {
-      font-size: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
       color: var(--err);
       min-height: 16px;
     }
 
     .hint-text {
-      font-size: 12px;
-      color: var(--text-muted);
-      line-height: 1.45;
+      font-size: 11.5px;
+      color: var(--ink-muted);
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
-  <!-- Full-bleed Map Centerpiece -->
+  <!-- Full-bleed Cartographic Canvas -->
   <main class="map-viewport">
-    <svg id="network-map" role="img" aria-label="Interactive Global Route Network Map"></svg>
+    <svg id="network-map" role="img" aria-label="DEAT Global Route Network Map"></svg>
   </main>
 
-  <!-- Floating DEAT Brand HUD -->
-  <div class="hud-brand">
-    <div class="deat-badge">
+  <!-- Top-Left DEAT Masthead & Live Network Readout -->
+  <div class="masthead">
+    <div class="deat-mark">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" fill="none" width="20" height="17" aria-hidden="true">
         <circle cx="64" cy="52" r="28" stroke="#FFFFFF" stroke-width="8.5"/>
         <path d="M18 14C33 33 57 44 95 47C69 54 53 67 39 86C46 65 39 45 18 14Z" fill="#FFFFFF"/>
       </svg>
       <span class="deat-wordmark">DEAT</span>
     </div>
-    <div>
-      <div class="brand-title">global passenger network</div>
-      <div class="brand-sub" id="network-summary">Connecting to Firestore...</div>
+    <div class="masthead-meta">
+      <div class="masthead-title">global passenger network</div>
+      <div class="masthead-telemetry" id="network-summary">0 HUBS · 0/0 AIRPORTS · 0 SECTORS</div>
+    </div>
+    <div class="sync-readout" id="sync-status" data-state="saving" title="Firestore synchronization status">
+      <span class="sync-led"></span>
+      <span id="sync-status-text">SYNCING</span>
     </div>
   </div>
 
-  <!-- Floating Controls & Filters HUD (No map color editor) -->
-  <div class="hud-controls">
-    <div class="status-pill" id="sync-status" data-state="saving" title="Firebase synchronization status">
-      <span class="status-dot"></span>
-      <span id="sync-status-text">Syncing...</span>
-    </div>
-
-    <select id="filter-hub" class="hud-select" aria-label="Filter by hub">
-      <option value="ALL">All Hubs</option>
+  <!-- Top-Right Filter & Editor Rail -->
+  <div class="control-rail">
+    <select id="filter-hub" class="rail-select" aria-label="Filter by hub">
+      <option value="ALL">HUB: ALL</option>
     </select>
 
-    <select id="filter-continent" class="hud-select" aria-label="Filter by continent">
-      <option value="ALL">All Continents</option>
+    <select id="filter-continent" class="rail-select" aria-label="Filter by continent">
+      <option value="ALL">REGION: ALL</option>
       <option value="Europe">Europe</option>
       <option value="North America">North America</option>
       <option value="South America">South America</option>
@@ -775,10 +880,9 @@
       <option value="Oceania">Oceania</option>
     </select>
 
-    <!-- Multi-aircraft toggle filter -->
     <div class="multi-filter-wrap">
-      <button type="button" class="hud-select" id="aircraft-toggle-btn" aria-expanded="false">
-        Aircraft: All
+      <button type="button" class="multi-filter-btn" id="aircraft-toggle-btn" aria-expanded="false">
+        FLEET: ALL
       </button>
       <div class="multi-filter-popover" id="aircraft-popover" role="group" aria-label="Toggle aircraft types">
         <div class="multi-filter-actions">
@@ -789,36 +893,36 @@
       </div>
     </div>
 
-    <button type="button" class="btn btn-primary" id="open-editor-btn">Network Editor</button>
+    <button type="button" class="rail-editor-btn" id="open-editor-btn">Network Editor</button>
   </div>
 
-  <!-- Interactive Airport / Route Inspector Card -->
-  <aside class="inspector-card" id="inspector-card" aria-live="polite">
-    <div class="inspector-header">
+  <!-- Left Flight / Station Inspector Rail -->
+  <aside class="inspector-rail" id="inspector-card" aria-live="polite">
+    <div class="inspector-head">
       <div>
-        <div class="inspector-kicker" id="inspector-kicker">Airport Details</div>
-        <div class="inspector-title" id="inspector-title">&mdash;</div>
+        <div class="inspector-tag" id="inspector-kicker">Station Profile</div>
+        <div class="inspector-name" id="inspector-title">&mdash;</div>
       </div>
-      <button type="button" class="btn btn-sm" id="close-inspector-btn">Clear</button>
+      <button type="button" class="btn btn-sm" id="close-inspector-btn">Close</button>
     </div>
-    <div class="inspector-grid" id="inspector-stats"></div>
+    <div class="inspector-metrics" id="inspector-stats"></div>
     <div id="inspector-extra" class="hint-text"></div>
-    <div class="inspector-list" id="inspector-list"></div>
+    <div class="inspector-sectors" id="inspector-list"></div>
   </aside>
 
-  <!-- Floating Legend -->
-  <div class="hud-legend">
-    <div class="legend-item"><span class="legend-hub"></span> Primary Hub</div>
-    <div class="legend-item"><span class="legend-dest"></span> Destination</div>
-    <div class="legend-item"><span class="legend-line"></span> Flight Route</div>
+  <!-- Bottom-Left Cartographic Legend -->
+  <div class="carto-key">
+    <div class="key-entry"><span class="key-hub"></span> Hub</div>
+    <div class="key-entry"><span class="key-station"></span> Station</div>
+    <div class="key-entry"><span class="key-sector"></span> Sector</div>
   </div>
 
-  <!-- Floating Zoom & Theme Controls -->
-  <div class="hud-zoom">
-    <button type="button" class="btn btn-sm" id="zoom-in-btn" title="Zoom in">+</button>
-    <button type="button" class="btn btn-sm" id="zoom-out-btn" title="Zoom out">&minus;</button>
-    <button type="button" class="btn btn-sm" id="zoom-reset-btn" title="Reset global view">Reset</button>
-    <button type="button" class="btn btn-sm" id="dark-mode-btn" title="Toggle dark mode">Dark Mode</button>
+  <!-- Bottom-Right Zoom & Theme Strip -->
+  <div class="zoom-strip">
+    <button type="button" class="zoom-btn" id="zoom-in-btn" title="Zoom in">+</button>
+    <button type="button" class="zoom-btn" id="zoom-out-btn" title="Zoom out">&minus;</button>
+    <button type="button" class="zoom-btn" id="zoom-reset-btn" title="Reset global view">Reset</button>
+    <button type="button" class="zoom-btn" id="dark-mode-btn" title="Toggle dark mode">Dark Mode</button>
   </div>
 
   <!-- Authentication Modal -->
@@ -830,10 +934,10 @@
       </div>
       <form id="auth-form">
         <div class="modal-body">
-          <p class="hint-text">Sign in with your authorized editor account to unlock the Network Editor and publish changes to Firebase.</p>
+          <p class="hint-text">Sign in with your authorized editor account to access the Network Editor and publish changes to Firebase.</p>
           <div class="field">
             <label for="auth-email">Editor Email</label>
-            <input type="email" id="auth-email" autocomplete="email" placeholder="editor@example.com" required />
+            <input type="email" id="auth-email" autocomplete="email" placeholder="editor@deat.aero" required />
           </div>
           <div class="field">
             <label for="auth-password">Password</label>
@@ -862,9 +966,8 @@
       </div>
 
       <div class="modal-body">
-        <!-- Airports & Hubs -->
         <section class="editor-section">
-          <h3>Airports &amp; Hubs (Add or Edit Existing)</h3>
+          <h3>Airports &amp; Hubs</h3>
           <form id="add-airport-form" class="form-grid-airport">
             <div class="field">
               <label for="airport-city">City Name</label>
@@ -883,7 +986,7 @@
               <input type="number" id="airport-lon" step="0.0001" min="-180" max="180" placeholder="16.5697" required />
             </div>
             <div class="field">
-              <label for="airport-continent">Continent / Region</label>
+              <label for="airport-continent">Region</label>
               <select id="airport-continent">
                 <option value="Europe">Europe</option>
                 <option value="North America">North America</option>
@@ -897,8 +1000,8 @@
             <div class="field">
               <label for="airport-type">Role</label>
               <select id="airport-type">
-                <option value="dest">Destination</option>
-                <option value="hub">Primary Hub</option>
+                <option value="dest">Station</option>
+                <option value="hub">Hub</option>
               </select>
             </div>
             <div class="field">
@@ -919,7 +1022,7 @@
                 <tr>
                   <th>City</th>
                   <th>Code</th>
-                  <th>Continent</th>
+                  <th>Region</th>
                   <th>Coordinates</th>
                   <th>Role</th>
                   <th>Status</th>
@@ -931,33 +1034,32 @@
           </div>
         </section>
 
-        <!-- Routes with per-route color and multiple aircraft types -->
         <section class="editor-section">
-          <h3>Flight Routes (Per-Route Color &amp; Multiple Aircraft Types)</h3>
+          <h3>Flight Sectors</h3>
           <form id="add-route-form" class="form-grid-route">
             <div class="field">
-              <label for="route-origin">Origin Airport</label>
+              <label for="route-origin">Origin</label>
               <select id="route-origin" required></select>
             </div>
             <div class="field">
-              <label for="route-dest">Destination Airport</label>
+              <label for="route-dest">Destination</label>
               <select id="route-dest" required></select>
             </div>
             <div class="field">
-              <label for="route-aircraft">Aircraft Types (comma-separated)</label>
-              <input type="text" id="route-aircraft" placeholder="e.g. A320neo, B787-9, A350-900" value="A320neo" required />
+              <label for="route-aircraft">Aircraft (comma-separated)</label>
+              <input type="text" id="route-aircraft" placeholder="e.g. A320neo, B787-9" value="A320neo" required />
             </div>
             <div class="field">
               <label for="route-freq">Frequency</label>
               <input type="text" id="route-freq" placeholder="e.g. Daily" value="Daily" />
             </div>
             <div class="field">
-              <label for="route-color">Route Color</label>
-              <input type="color" id="route-color" value="#dc2626" title="Choose color for this route" />
+              <label for="route-color">Color</label>
+              <input type="color" id="route-color" value="#EE1C25" title="Route color" />
             </div>
             <div class="field">
               <label>&nbsp;</label>
-              <button type="submit" class="btn btn-primary" id="route-submit-btn">Save Route</button>
+              <button type="submit" class="btn btn-primary" id="route-submit-btn">Save Sector</button>
             </div>
           </form>
 
@@ -965,10 +1067,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>Color</th>
-                  <th>Origin</th>
-                  <th>Destination</th>
-                  <th>Aircraft Types</th>
+                  <th><button type="button" class="sort-th-btn" data-sort-route="color">Color <span class="sort-ind" data-ind="color"></span></button></th>
+                  <th><button type="button" class="sort-th-btn" data-sort-route="origin">Origin <span class="sort-ind" data-ind="origin"></span></button></th>
+                  <th><button type="button" class="sort-th-btn" data-sort-route="dest">Destination <span class="sort-ind" data-ind="dest"></span></button></th>
+                  <th><button type="button" class="sort-th-btn" data-sort-route="aircraft">Aircraft <span class="sort-ind" data-ind="aircraft"></span></button></th>
                   <th>Frequency</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
@@ -984,8 +1086,8 @@
       <div class="modal-footer">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <input type="file" id="import-json-input" accept=".json,application/json" style="display:none;" />
-          <button type="button" class="btn btn-sm" id="import-json-btn">Import JSON Backup</button>
-          <button type="button" class="btn btn-sm" id="export-json-btn">Export JSON Backup</button>
+          <button type="button" class="btn btn-sm" id="import-json-btn">Import JSON</button>
+          <button type="button" class="btn btn-sm" id="export-json-btn">Export JSON</button>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button type="button" class="btn btn-primary" id="save-network-btn">Publish to Firebase</button>
@@ -1004,17 +1106,17 @@
 
     const FIRESTORE_COLLECTION = "networkState";
     const FIRESTORE_DOC_ID = "default";
-    const DEFAULT_ROUTE_COLOR = "#dc2626";
+    const DEFAULT_ROUTE_COLOR = "#EE1C25";
+    const HIGHLIGHT_ROUTE_COLOR = "#FF131B";
 
-    // Zero hardcoded sample routes/airports — populated exclusively from Firebase Firestore
     let networkData = {
       airports: [],
       routes: []
     };
 
-    // Active toggled aircraft types for multi-select filtering; empty set = all aircraft allowed
     let selectedAircraftSet = new Set();
     let currentZoomScale = 1;
+    let currentZoomTransform = d3.zoomIdentity;
 
     let firebaseReady = false;
     let auth = null;
@@ -1024,13 +1126,15 @@
 
     let selectedAirportIcao = null;
     let selectedRouteKey = null;
+    let routeSortField = null;
+    let routeSortDir = "asc";
 
-    const statusPill = document.getElementById("sync-status");
-    const statusText = document.getElementById("sync-status-text");
+    const statusEl = document.getElementById("sync-status");
+    const statusTextEl = document.getElementById("sync-status-text");
 
     function setSyncStatus(state, text) {
-      statusPill.dataset.state = state;
-      statusText.textContent = text;
+      statusEl.dataset.state = state;
+      statusTextEl.textContent = text;
     }
 
     function isFirebaseConfigured() {
@@ -1092,14 +1196,13 @@
 
     async function initFirebaseBackend() {
       if (!isFirebaseConfigured()) {
-        setSyncStatus("error", "Configure firebase-config.js");
-        document.getElementById("network-summary").textContent = "Firebase config missing";
+        setSyncStatus("error", "CONFIG NEEDED");
         renderAll();
         return;
       }
 
       try {
-        setSyncStatus("saving", "Connecting...");
+        setSyncStatus("saving", "CONNECTING");
         const app = initializeApp(window.FIREBASE_CONFIG);
         auth = getAuth(app);
         db = getFirestore(app);
@@ -1116,7 +1219,7 @@
           networkData = sanitizeNetworkPayload(initialSnap.data().payload);
         }
         renderAll();
-        setSyncStatus("synced", "Firebase • Live");
+        setSyncStatus("synced", "LIVE");
 
         onSnapshot(
           stateDocRef,
@@ -1125,16 +1228,16 @@
               networkData = sanitizeNetworkPayload(docSnap.data().payload);
               renderAll();
             }
-            setSyncStatus("synced", "Firebase • Live");
+            setSyncStatus("synced", "LIVE");
           },
           (err) => {
             console.error("Firestore read error:", err);
-            setSyncStatus("error", "Firestore Error (" + err.code + ")");
+            setSyncStatus("error", "ERR " + err.code.toUpperCase());
           }
         );
       } catch (err) {
         console.error("Firebase init error:", err);
-        setSyncStatus("error", "Firebase Init Failed");
+        setSyncStatus("error", "INIT FAILED");
       }
     }
 
@@ -1145,7 +1248,7 @@
       if (!currentUser) {
         throw new Error("Please sign in before publishing changes to Firebase.");
       }
-      setSyncStatus("saving", "Publishing...");
+      setSyncStatus("saving", "PUBLISHING");
       await setDoc(stateDocRef, {
         payload: {
           airports: networkData.airports,
@@ -1154,11 +1257,11 @@
         updatedAt: new Date().toISOString(),
         updatedBy: currentUser.email || currentUser.uid
       });
-      setSyncStatus("synced", "Firebase • Live");
+      setSyncStatus("synced", "LIVE");
     }
 
     // =========================================================================
-    // INTERACTIVE D3 WORLD MAP (Zoom-scaled Labels, IDL Splitting, Selection)
+    // D3 CARTOGRAPHIC NETWORK ENGINE
     // =========================================================================
     const svg = d3.select("#network-map");
     const mapLayer = svg.append("g").attr("class", "map-layer");
@@ -1221,8 +1324,6 @@
       return Math.round(rad * 6371);
     }
 
-    let currentZoomTransform = d3.zoomIdentity;
-
     function estimateLabelBox(ap, screenPt) {
       const isHub = Boolean(ap.isHub);
       const isSel = ap.icao === selectedAirportIcao;
@@ -1244,13 +1345,22 @@
       );
     }
 
-    // Google Maps-like screen-space markers & bounding-box collision decluttering:
-    // Airport markers ALWAYS remain visible; labels stay crisp in screen space and progressively appear as you zoom in.
+    // Constant line weight regardless of zoom: 2px normal, 4px highlighted
+    function applyConstantRouteWeights(scale) {
+      const k = Math.max(1, scale || 1);
+      const invK = 1 / k;
+      routesGroup.selectAll("path.route-visible-path")
+        .attr("stroke-width", (d) => ((d.isHighlighted ? 4 : 2) * invK).toFixed(4));
+      routesGroup.selectAll("path.route-hit-area")
+        .attr("stroke-width", (14 * invK).toFixed(4));
+      landGroup.selectAll("path.land-path")
+        .attr("stroke-width", (0.65 * invK).toFixed(4));
+    }
+
     function applyZoomScaledLabelStyles(scale) {
       const k = Math.max(1, scale || 1);
       const invK = 1 / k;
 
-      // Counter-scale each airport marker group so pins stay sharp, clean, and uniform in screen pixels
       nodesGroup.selectAll("g.airport-node")
         .attr("transform", (d) => {
           const base = d._basePos || [0, 0];
@@ -1264,18 +1374,16 @@
       nodesGroup.selectAll("circle.inner-dot")
         .attr("r", (d) => (d.isHub || d.icao === selectedAirportIcao ? 2.3 : 0));
 
-      // Compute screen-space bounding boxes for labels so dense regions never turn into unreadable text soup
       const placedBoxes = [];
       const showLabelSet = new Set();
-
       const allNodes = nodesGroup.selectAll("g.airport-node").data();
+
       const rankScore = (ap) => {
         let s = 0;
         if (ap.icao === selectedAirportIcao) s += 1000;
         if (ap.isHub) s += 500;
         if (k >= 2.2) s += 80;
         if (k >= 4.0) s += 120;
-        // Slight deterministic tie-breaker by ICAO so labels don't jitter wildly during pan
         s -= (ap.icao.charCodeAt(3) || 0) * 0.1;
         return s;
       };
@@ -1286,9 +1394,6 @@
         const base = ap._basePos;
         if (!base || Number.isNaN(base[0]) || Number.isNaN(base[1])) continue;
         const screenPt = currentZoomTransform.apply(base);
-
-        // At zoom = 1, show hubs, selected airport, and non-overlapping major/spaced cities
-        // As zoom increases, collision boxes tighten slightly so nearby airports smoothly pop in
         const pad = k >= 5 ? 1 : k >= 2.8 ? 2 : 5;
         const box = estimateLabelBox(ap, screenPt);
         const collides = placedBoxes.some((b) => boxesOverlap(box, b, pad));
@@ -1307,25 +1412,13 @@
         .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"));
 
       nodesGroup.selectAll("text.map-label-icao")
-        .style("font-size", "9px")
-        .style("stroke-width", "2.6px")
-        .attr("y", (d) => (d.isHub || d.icao === selectedAirportIcao ? 26 : 23))
+        .style("font-size", "10.5px")
+        .style("stroke-width", "2.8px")
+        .attr("y", (d) => (d.isHub || d.icao === selectedAirportIcao ? 27.5 : 24.5))
         .style("display", (d) => {
           if (!showLabelSet.has(d.icao)) return "none";
-          // Show ICAO sub-label for hubs, selected airport, or when zoomed in (>= 2.2x)
           return (d.isHub || d.icao === selectedAirportIcao || k >= 2.2) ? null : "none";
         });
-    }
-
-    function applyConstantRouteWeights(scale) {
-      const k = Math.max(1, scale || 1);
-      const invK = 1 / k;
-      routesGroup.selectAll("path.route-visible-path")
-        .attr("stroke-width", (d) => ((d.isHighlighted ? 4 : 2) * invK).toFixed(4));
-      routesGroup.selectAll("path.route-hit-area")
-        .attr("stroke-width", (14 * invK).toFixed(4));
-      landGroup.selectAll("path.land-path")
-        .attr("stroke-width", (0.65 * invK).toFixed(4));
     }
 
     const zoomBehavior = d3.zoom()
@@ -1347,13 +1440,13 @@
     });
 
     document.getElementById("zoom-in-btn").addEventListener("click", () => {
-      svg.transition().duration(260).call(zoomBehavior.scaleBy, 1.5);
+      svg.transition().duration(240).call(zoomBehavior.scaleBy, 1.5);
     });
     document.getElementById("zoom-out-btn").addEventListener("click", () => {
-      svg.transition().duration(260).call(zoomBehavior.scaleBy, 1 / 1.5);
+      svg.transition().duration(240).call(zoomBehavior.scaleBy, 1 / 1.5);
     });
     document.getElementById("zoom-reset-btn").addEventListener("click", () => {
-      svg.transition().duration(320).call(zoomBehavior.transform, d3.zoomIdentity);
+      svg.transition().duration(300).call(zoomBehavior.transform, d3.zoomIdentity);
     });
 
     function getFilteredNetwork() {
@@ -1400,6 +1493,10 @@
       const height = window.innerHeight || 720;
       svg.attr("viewBox", `0 0 ${width} ${height}`);
 
+      const isDarkMode = document.body.classList.contains("dark-mode");
+      const markerFill = isDarkMode ? "#0c0f14" : "#ffffff";
+      const labelHalo = isDarkMode ? "#0c0f14" : "#ffffff";
+
       const projection = d3.geoNaturalEarth1()
         .scale(Math.min(width / 5.3, height / 2.65))
         .translate([width / 2, height / 1.9]);
@@ -1407,19 +1504,17 @@
       const pathGenerator = d3.geoPath().projection(projection);
 
       if (worldLandGeoJson) {
-        const isDark = document.body.classList.contains("dark-mode");
         landGroup.selectAll("path")
           .data(worldLandGeoJson.features)
           .join("path")
           .attr("class", "land-path")
           .attr("d", pathGenerator)
-          .attr("fill", isDark ? "#1f2937" : "#dce0e6")
-          .attr("stroke", isDark ? "#0b0f17" : "#ffffff")
+          .attr("fill", isDarkMode ? "#1c222e" : "#d8dce2")
+          .attr("stroke", isDarkMode ? "#0c0f14" : "#ffffff")
           .attr("stroke-width", 0.65);
       }
 
       const { filteredRoutes, visibleAirports, airportByIcao } = getFilteredNetwork();
-      const highlightColor = "#FF131B";
 
       const lineBuilder = d3.line()
         .x((d) => projection(d)[0])
@@ -1445,7 +1540,7 @@
             rKey,
             route: r,
             coords,
-            color: isHighlighted ? highlightColor : routeColor,
+            color: isHighlighted ? HIGHLIGHT_ROUTE_COLOR : routeColor,
             isHighlighted,
             isDimmed
           });
@@ -1464,7 +1559,7 @@
       routeGroups.select("path.route-visible-path")
         .attr("d", (d) => lineBuilder(d.coords))
         .attr("stroke", (d) => d.color)
-        .attr("opacity", (d) => (d.isDimmed ? 0.18 : 0.92));
+        .attr("opacity", (d) => (d.isDimmed ? 0.16 : 0.94));
 
       routeGroups.select("path.route-hit-area")
         .attr("d", (d) => lineBuilder(d.coords))
@@ -1499,21 +1594,17 @@
           selectAirport(d);
         });
 
-      const isDarkMode = document.body.classList.contains("dark-mode");
-      const markerFill = isDarkMode ? "#0b0f17" : "#ffffff";
-      const labelHalo = isDarkMode ? "#0b0f17" : "#ffffff";
-
       nodeGroups.select("circle.outer-ring")
         .attr("fill", markerFill)
-        .attr("stroke", (d) => (d.icao === selectedAirportIcao ? "#EE1C25" : "#EE1C25"));
+        .attr("stroke", "#EE1C25");
 
       nodeGroups.select("circle.inner-dot")
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? "#EE1C25" : "#EE1C25"));
+        .attr("fill", "#EE1C25");
 
       nodeGroups.select("text.map-label-city")
         .attr("text-anchor", "middle")
         .style("stroke", labelHalo)
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? (isDarkMode ? "#f8fafc" : "#0f172a") : "#EE1C25"))
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? (isDarkMode ? "#f8fafc" : "#16181d") : "#EE1C25"))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
@@ -1561,41 +1652,41 @@
       const airportMap = new Map(networkData.airports.map((a) => [a.icao, a]));
       const connected = networkData.routes.filter((r) => r.origin === airport.icao || r.dest === airport.icao);
 
-      document.getElementById("inspector-kicker").textContent = airport.isHub ? "Primary Hub Airport" : "Destination Airport";
+      document.getElementById("inspector-kicker").textContent = airport.isHub ? "Hub Station" : "Network Station";
       document.getElementById("inspector-title").textContent = `${airport.city} (${airport.icao})`;
       document.getElementById("inspector-stats").innerHTML = `
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Continent</div>
-          <div class="inspector-stat-val">${airport.continent}</div>
+        <div class="metric-cell">
+          <div class="metric-key">Region</div>
+          <div class="metric-val">${airport.continent}</div>
         </div>
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Connected Routes</div>
-          <div class="inspector-stat-val">${connected.length}</div>
+        <div class="metric-cell">
+          <div class="metric-key">Sectors</div>
+          <div class="metric-val">${connected.length}</div>
         </div>
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Latitude</div>
-          <div class="inspector-stat-val">${airport.lat.toFixed(4)}&deg;</div>
+        <div class="metric-cell">
+          <div class="metric-key">Latitude</div>
+          <div class="metric-val">${airport.lat.toFixed(4)}&deg;</div>
         </div>
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Longitude</div>
-          <div class="inspector-stat-val">${airport.lon.toFixed(4)}&deg;</div>
+        <div class="metric-cell">
+          <div class="metric-key">Longitude</div>
+          <div class="metric-val">${airport.lon.toFixed(4)}&deg;</div>
         </div>
       `;
 
       document.getElementById("inspector-extra").textContent =
-        connected.length > 0 ? "Click a route below to inspect flight details:" : "No active routes connected to this airport.";
+        connected.length > 0 ? "Select a sector below to inspect flight details:" : "No sectors connected to this station.";
 
       document.getElementById("inspector-list").innerHTML = connected.map((r) => {
         const peerCode = r.origin === airport.icao ? r.dest : r.origin;
         const peer = airportMap.get(peerCode);
         const acText = (r.aircraftTypes || []).join(", ");
         return `
-          <div class="inspector-route-item" data-inspect-route="${r.origin}->${r.dest}">
+          <div class="sector-row" data-inspect-route="${r.origin}->${r.dest}">
             <span style="display:flex;align-items:center;gap:6px;">
-              <span class="route-swatch-dot" style="background:${r.color || DEFAULT_ROUTE_COLOR};"></span>
+              <span class="swatch-dot" style="background:${r.color || DEFAULT_ROUTE_COLOR};"></span>
               <strong>${peer ? peer.city.toUpperCase() : peerCode}</strong> (${peerCode})
             </span>
-            <span style="color:var(--text-muted);text-align:right;">${acText}</span>
+            <span style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-muted);text-align:right;">${acText}</span>
           </div>
         `;
       }).join("");
@@ -1614,43 +1705,43 @@
       const distKm = src && dst ? calculateGreatCircleKm(src, dst) : 0;
       const acText = (route.aircraftTypes || []).join(", ");
 
-      document.getElementById("inspector-kicker").textContent = "Flight Route Details";
+      document.getElementById("inspector-kicker").textContent = "Flight Sector";
       document.getElementById("inspector-title").textContent =
         `${src ? src.city : route.origin} → ${dst ? dst.city : route.dest}`;
 
       document.getElementById("inspector-stats").innerHTML = `
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Sector</div>
-          <div class="inspector-stat-val">${route.origin} &ndash; ${route.dest}</div>
+        <div class="metric-cell">
+          <div class="metric-key">City Pair</div>
+          <div class="metric-val">${route.origin}–${route.dest}</div>
         </div>
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Frequency</div>
-          <div class="inspector-stat-val">${route.frequency}</div>
+        <div class="metric-cell">
+          <div class="metric-key">Frequency</div>
+          <div class="metric-val">${route.frequency}</div>
         </div>
-        <div class="inspector-stat" style="grid-column: span 2;">
-          <div class="inspector-stat-label">Aircraft Types</div>
-          <div class="inspector-stat-val">${acText}</div>
+        <div class="metric-cell" style="grid-column: span 2;">
+          <div class="metric-key">Aircraft</div>
+          <div class="metric-val">${acText}</div>
         </div>
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Great-Circle Distance</div>
-          <div class="inspector-stat-val">${distKm.toLocaleString()} km</div>
+        <div class="metric-cell">
+          <div class="metric-key">Distance</div>
+          <div class="metric-val">${distKm.toLocaleString()} km</div>
         </div>
-        <div class="inspector-stat">
-          <div class="inspector-stat-label">Assigned Color</div>
-          <div class="inspector-stat-val" style="display:flex;align-items:center;gap:6px;">
-            <span class="route-swatch-dot" style="background:${route.color || DEFAULT_ROUTE_COLOR};"></span>
+        <div class="metric-cell">
+          <div class="metric-key">Sector Color</div>
+          <div class="metric-val" style="display:flex;align-items:center;gap:6px;">
+            <span class="swatch-dot" style="background:${route.color || DEFAULT_ROUTE_COLOR};"></span>
             ${route.color || DEFAULT_ROUTE_COLOR}
           </div>
         </div>
       `;
 
       document.getElementById("inspector-extra").textContent =
-        src && dst ? `${src.continent} to ${dst.continent}` : "";
+        src && dst ? `${src.continent} → ${dst.continent}` : "";
 
       document.getElementById("inspector-list").innerHTML = [src, dst].filter(Boolean).map((ap) => `
-        <div class="inspector-route-item" data-inspect-airport="${ap.icao}">
-          <span>Inspect <strong>${ap.city.toUpperCase()}</strong> (${ap.icao})</span>
-          <span style="color:var(--text-muted);">${ap.continent}</span>
+        <div class="sector-row" data-inspect-airport="${ap.icao}">
+          <span>Station: <strong>${ap.city.toUpperCase()}</strong> (${ap.icao})</span>
+          <span style="font-family:var(--font-mono);font-size:10.5px;color:var(--ink-muted);">${ap.continent}</span>
         </div>
       `).join("");
 
@@ -1675,7 +1766,7 @@
     });
 
     // =========================================================================
-    // TOGGLEABLE MULTI-AIRCRAFT FILTER POPOVER
+    // AIRCRAFT MULTI-FILTER POPOVER
     // =========================================================================
     const aircraftToggleBtn = document.getElementById("aircraft-toggle-btn");
     const aircraftPopover = document.getElementById("aircraft-popover");
@@ -1696,11 +1787,11 @@
 
     function updateAircraftButtonLabel() {
       if (selectedAircraftSet.size === 0) {
-        aircraftToggleBtn.textContent = "Aircraft: All";
+        aircraftToggleBtn.textContent = "FLEET: ALL";
       } else if (selectedAircraftSet.size === 1) {
-        aircraftToggleBtn.textContent = `Aircraft: ${[...selectedAircraftSet][0]}`;
+        aircraftToggleBtn.textContent = `FLEET: ${[...selectedAircraftSet][0]}`;
       } else {
-        aircraftToggleBtn.textContent = `Aircraft (${selectedAircraftSet.size})`;
+        aircraftToggleBtn.textContent = `FLEET (${selectedAircraftSet.size})`;
       }
     }
 
@@ -1712,7 +1803,7 @@
       updateAircraftButtonLabel();
 
       if (!allTypes.length) {
-        aircraftCheckboxList.innerHTML = `<div class="hint-text" style="padding:6px 8px;">No aircraft types yet</div>`;
+        aircraftCheckboxList.innerHTML = `<div class="hint-text" style="padding:6px 8px;">No aircraft defined</div>`;
         return;
       }
 
@@ -1781,10 +1872,10 @@
       const badge = document.getElementById("editor-user-badge");
       const signoutBtn = document.getElementById("signout-btn");
       if (currentUser) {
-        badge.textContent = `Signed in: ${currentUser.email}`;
+        badge.textContent = currentUser.email;
         signoutBtn.style.display = "inline-flex";
       } else {
-        badge.textContent = "Not signed in";
+        badge.textContent = "";
         signoutBtn.style.display = "none";
       }
     }
@@ -1817,7 +1908,7 @@
         closeModal(authModal);
         openModal(editorModal);
       } catch (err) {
-        authError.textContent = "Sign-in failed. Verify your editor email and password.";
+        authError.textContent = "Authentication failed. Check email and password.";
       } finally {
         btn.disabled = false;
       }
@@ -1834,11 +1925,11 @@
       const allAircraftTypes = [...new Set(networkData.routes.flatMap((r) => r.aircraftTypes || []).filter(Boolean))].sort();
 
       document.getElementById("network-summary").textContent =
-        `${hubs.length} hub${hubs.length === 1 ? "" : "s"} • ${activeAirportsAll.length}/${networkData.airports.length} active airports • ${networkData.routes.length} routes`;
+        `${hubs.length} HUB${hubs.length === 1 ? "" : "S"} · ${activeAirportsAll.length}/${networkData.airports.length} ACTIVE · ${networkData.routes.length} SECTORS`;
 
       const hubSel = document.getElementById("filter-hub");
       const prevHub = hubSel.value;
-      hubSel.innerHTML = `<option value="ALL">All Hubs (${hubs.length})</option>` +
+      hubSel.innerHTML = `<option value="ALL">HUB: ALL (${hubs.length})</option>` +
         hubs.map((h) => `<option value="${h.icao}">${h.city.toUpperCase()} (${h.icao})</option>`).join("");
       if ([...hubSel.options].some((o) => o.value === prevHub)) hubSel.value = prevHub;
 
@@ -1860,12 +1951,12 @@
         ? sortedAirports.map((a) => `
           <tr>
             <td style="text-transform:capitalize;font-weight:600;">${a.city}</td>
-            <td><code>${a.icao}</code></td>
+            <td style="font-family:var(--font-mono);">${a.icao}</td>
             <td>${a.continent}</td>
-            <td>${a.lat.toFixed(2)}, ${a.lon.toFixed(2)}</td>
-            <td>${a.isHub ? '<span class="badge-hub">Primary Hub</span>' : 'Destination'}</td>
+            <td style="font-family:var(--font-mono);">${a.lat.toFixed(2)}, ${a.lon.toFixed(2)}</td>
+            <td>${a.isHub ? '<span class="badge-hub">Hub</span>' : 'Station'}</td>
             <td>
-              <button type="button" class="btn btn-sm" data-toggle-airport="${a.icao}" style="color:${a.active === false ? 'var(--text-muted)' : 'var(--ok)'};">
+              <button type="button" class="btn btn-sm" data-toggle-airport="${a.icao}" style="color:${a.active === false ? 'var(--ink-muted)' : 'var(--ok)'};">
                 ${a.active === false ? 'Inactive' : 'Active'}
               </button>
             </td>
@@ -1875,31 +1966,71 @@
             </td>
           </tr>
         `).join("")
-        : `<tr><td colspan="7" class="hint-text" style="text-align:center;padding:14px;">No airports in Firebase yet. Add your first airport above.</td></tr>`;
+        : `<tr><td colspan="7" class="hint-text" style="text-align:center;padding:12px;">No airports in database.</td></tr>`;
 
       const airportMap = new Map(networkData.airports.map((a) => [a.icao, a]));
       const routesBody = document.getElementById("routes-table-body");
-      routesBody.innerHTML = networkData.routes.length
-        ? networkData.routes.map((r, idx) => {
+
+      const indexedRoutes = networkData.routes.map((r, origIdx) => ({ r, origIdx }));
+      if (routeSortField) {
+        const dir = routeSortDir === "desc" ? -1 : 1;
+        indexedRoutes.sort((a, b) => {
+          let av = "";
+          let bv = "";
+          if (routeSortField === "color") {
+            av = (a.r.color || DEFAULT_ROUTE_COLOR).toLowerCase();
+            bv = (b.r.color || DEFAULT_ROUTE_COLOR).toLowerCase();
+          } else if (routeSortField === "origin") {
+            const ao = airportMap.get(a.r.origin);
+            const bo = airportMap.get(b.r.origin);
+            av = `${ao ? ao.city : ""} ${a.r.origin}`.toLowerCase();
+            bv = `${bo ? bo.city : ""} ${b.r.origin}`.toLowerCase();
+          } else if (routeSortField === "dest") {
+            const ad = airportMap.get(a.r.dest);
+            const bd = airportMap.get(b.r.dest);
+            av = `${ad ? ad.city : ""} ${a.r.dest}`.toLowerCase();
+            bv = `${bd ? bd.city : ""} ${b.r.dest}`.toLowerCase();
+          } else if (routeSortField === "aircraft") {
+            av = (a.r.aircraftTypes || []).join(", ").toLowerCase();
+            bv = (b.r.aircraftTypes || []).join(", ").toLowerCase();
+          }
+          return av.localeCompare(bv) * dir;
+        });
+      }
+
+      document.querySelectorAll(".sort-th-btn").forEach((btn) => {
+        const field = btn.getAttribute("data-sort-route");
+        const ind = btn.querySelector(".sort-ind");
+        if (field === routeSortField) {
+          btn.classList.add("active");
+          if (ind) ind.textContent = routeSortDir === "desc" ? "▼" : "▲";
+        } else {
+          btn.classList.remove("active");
+          if (ind) ind.textContent = "";
+        }
+      });
+
+      routesBody.innerHTML = indexedRoutes.length
+        ? indexedRoutes.map(({ r, origIdx }) => {
           const o = airportMap.get(r.origin);
           const d = airportMap.get(r.dest);
           const rColor = r.color || DEFAULT_ROUTE_COLOR;
           const chips = (r.aircraftTypes || []).map((ac) => `<span class="ac-chip">${ac}</span>`).join("");
           return `
             <tr>
-              <td><span class="route-swatch-dot" style="background:${rColor};" title="${rColor}"></span></td>
+              <td><span class="swatch-dot" style="background:${rColor};" title="${rColor}"></span></td>
               <td><strong>${o ? o.city.toUpperCase() : r.origin}</strong> (${r.origin})</td>
               <td><strong>${d ? d.city.toUpperCase() : r.dest}</strong> (${r.dest})</td>
               <td>${chips}</td>
-              <td>${r.frequency}</td>
+              <td style="font-family:var(--font-mono);">${r.frequency}</td>
               <td style="text-align:right;white-space:nowrap;">
-                <button type="button" class="btn btn-sm" data-edit-route="${idx}">Edit</button>
-                <button type="button" class="btn btn-sm btn-danger" data-del-route="${idx}">Delete</button>
+                <button type="button" class="btn btn-sm" data-edit-route="${origIdx}">Edit</button>
+                <button type="button" class="btn btn-sm btn-danger" data-del-route="${origIdx}">Delete</button>
               </td>
             </tr>
           `;
         }).join("")
-        : `<tr><td colspan="6" class="hint-text" style="text-align:center;padding:14px;">No routes in Firebase yet. Add airports above, then create routes here.</td></tr>`;
+        : `<tr><td colspan="6" class="hint-text" style="text-align:center;padding:12px;">No flight sectors in database.</td></tr>`;
     }
 
     function renderAll() {
@@ -1985,15 +2116,15 @@
       const color = document.getElementById("route-color").value || DEFAULT_ROUTE_COLOR;
 
       if (!origin || !dest) {
-        editorError.textContent = "Please add at least two airports before creating a route.";
+        editorError.textContent = "Add at least two airports before creating a sector.";
         return;
       }
       if (origin === dest) {
-        editorError.textContent = "Origin and destination airports must be different.";
+        editorError.textContent = "Origin and destination must be different.";
         return;
       }
       if (!aircraftTypes.length) {
-        editorError.textContent = "Please specify at least one aircraft type.";
+        editorError.textContent = "Specify at least one aircraft type.";
         return;
       }
 
@@ -2006,6 +2137,20 @@
       }
 
       renderAll();
+    });
+
+    document.querySelectorAll(".sort-th-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const field = btn.getAttribute("data-sort-route");
+        if (!field) return;
+        if (routeSortField === field) {
+          routeSortDir = routeSortDir === "asc" ? "desc" : "asc";
+        } else {
+          routeSortField = field;
+          routeSortDir = "asc";
+        }
+        renderControlsAndTables();
+      });
     });
 
     document.getElementById("routes-table-body").addEventListener("click", (e) => {
@@ -2039,13 +2184,12 @@
         closeModal(editorModal);
       } catch (err) {
         editorError.textContent = err.message || "Failed to publish changes to Firebase.";
-        setSyncStatus("error", "Publish Error");
+        setSyncStatus("error", "PUBLISH ERR");
       } finally {
         btn.disabled = false;
       }
     });
 
-    // Import JSON Backup (supports { airports, routes } or { payload: { airports, routes } } or airport array)
     const importJsonInput = document.getElementById("import-json-input");
     document.getElementById("import-json-btn").addEventListener("click", () => {
       editorError.textContent = "";
@@ -2080,7 +2224,7 @@
         clearInspector();
         renderAll();
         editorError.style.color = "var(--ok)";
-        editorError.textContent = `Imported ${networkData.airports.length} airports and ${networkData.routes.length} routes. Click "Publish to Firebase" to save live.`;
+        editorError.textContent = `Imported ${networkData.airports.length} airports and ${networkData.routes.length} sectors. Publish to Firebase to save.`;
         setTimeout(() => {
           editorError.style.color = "";
         }, 5000);
@@ -2095,7 +2239,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "firebase-route-network-backup.json";
+      a.download = "deat-route-network-backup.json";
       a.click();
       URL.revokeObjectURL(url);
     });
