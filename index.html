@@ -965,7 +965,9 @@
       </div>
 
       <div class="modal-footer">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <input type="file" id="import-json-input" accept=".json,application/json" style="display:none;" />
+          <button type="button" class="btn btn-sm" id="import-json-btn">Import JSON Backup</button>
           <button type="button" class="btn btn-sm" id="export-json-btn">Export JSON Backup</button>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
@@ -1922,6 +1924,51 @@
         setSyncStatus("error", "Publish Error");
       } finally {
         btn.disabled = false;
+      }
+    });
+
+    // Import JSON Backup (supports { airports, routes } or { payload: { airports, routes } } or airport array)
+    const importJsonInput = document.getElementById("import-json-input");
+    document.getElementById("import-json-btn").addEventListener("click", () => {
+      editorError.textContent = "";
+      importJsonInput.value = "";
+      importJsonInput.click();
+    });
+
+    importJsonInput.addEventListener("change", async (e) => {
+      editorError.textContent = "";
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        let candidate = parsed;
+        if (parsed && typeof parsed === "object" && parsed.payload && typeof parsed.payload === "object") {
+          candidate = parsed.payload;
+        } else if (Array.isArray(parsed)) {
+          candidate = { airports: parsed, routes: networkData.routes };
+        }
+
+        const sanitized = sanitizeNetworkPayload(candidate);
+        if (!Array.isArray(candidate?.airports) && !Array.isArray(candidate?.routes)) {
+          throw new Error("JSON must contain 'airports' and/or 'routes' arrays.");
+        }
+
+        networkData = {
+          airports: sanitized.airports,
+          routes: Array.isArray(candidate?.routes) ? sanitized.routes : networkData.routes
+        };
+        clearInspector();
+        renderAll();
+        editorError.style.color = "var(--ok)";
+        editorError.textContent = `Imported ${networkData.airports.length} airports and ${networkData.routes.length} routes. Click "Publish to Firebase" to save live.`;
+        setTimeout(() => {
+          editorError.style.color = "";
+        }, 5000);
+      } catch (err) {
+        editorError.style.color = "";
+        editorError.textContent = err.message || "Failed to import JSON backup file.";
       }
     });
 
