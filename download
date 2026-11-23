@@ -1,0 +1,7 @@
+# Local environment & private credentials (NEVER commit service account keys)
+.env
+.env.*
+*service-account*.json
+*firebase-adminsdk*.json
+.DS_Store
+Thumbs.db

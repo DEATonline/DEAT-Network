@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Route Network &amp; Hub Editor</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f8fafc;
+      --surface-elevated: #ffffff;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #dc2626;
+      --accent-hover: #b91c1c;
+      --land: #d8dce3;
+      --land-stroke: #ffffff;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --err: #dc2626;
+      --radius: 8px;
+      --control-h: 34px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header.topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 20px;
+      background: var(--surface-elevated);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      height: var(--control-h);
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-pill[data-state="synced"] .status-indicator { background: var(--ok); }
+    .status-pill[data-state="saving"] .status-indicator { background: var(--warn); }
+    .status-pill[data-state="local"] .status-indicator { background: var(--warn); }
+    .status-pill[data-state="error"] .status-indicator { background: var(--err); }
+
+    button, select, input {
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .btn {
+      height: var(--control-h);
+      padding: 0 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: var(--surface-elevated);
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--surface);
+      border-color: #94a3b8;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-danger {
+      color: var(--err);
+      border-color: #fecaca;
+      background: #fef2f2;
+    }
+
+    .btn-danger:hover {
+      background: #fee2e2;
+    }
+
+    .btn-sm {
+      height: 28px;
+      padding: 0 8px;
+      font-size: 12px;
+    }
+
+    main.map-stage {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 540px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    #network-map {
+      width: 100%;
+      height: 100%;
+      min-height: 540px;
+      display: block;
+    }
+
+    .map-controls {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(6px);
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      z-index: 10;
+    }
+
+    .map-legend {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(6px);
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 12px;
+      color: var(--text-muted);
+      z-index: 10;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-hub {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2.5px solid var(--accent);
+      background: #ffffff;
+    }
+
+    .legend-dest {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: #ffffff;
+    }
+
+    .legend-line {
+      width: 18px;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    /* Modal System with clean z-index & non-overlapping grids */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.52);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+      width: 100%;
+      max-width: 920px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      z-index: 1001;
+    }
+
+    .modal-card.modal-sm {
+      max-width: 420px;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--surface);
+    }
+
+    .modal-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .editor-section {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .editor-section h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .form-grid-hub {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 0.8fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .form-grid-route {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    @media (max-width: 780px) {
+      .form-grid-hub,
+      .form-grid-route {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-width: 0;
+      height: var(--control-h);
+      padding: 0 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #ffffff;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    th {
+      background: var(--surface);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge-hub {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .error-msg {
+      font-size: 12px;
+      color: var(--err);
+      min-height: 16px;
+    }
+
+    .hint-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .map-label-city {
+      font-size: 10.5px;
+      font-weight: 700;
+      font-style: italic;
+      fill: #dc2626;
+      pointer-events: none;
+      paint-order: stroke;
+      stroke: #ffffff;
+      stroke-width: 2.5px;
+      stroke-linejoin: round;
+    }
+
+    .map-label-icao {
+      font-size: 8.5px;
+      font-weight: 700;
+      fill: #1e293b;
+      pointer-events: none;
+      paint-order: stroke;
+      stroke: #ffffff;
+      stroke-width: 2.5px;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div>
+        <h1>Global Route Network</h1>
+        <span id="network-summary">Loading network...</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="status-pill" id="sync-status" data-state="local" title="Database synchronization status">
+        <span class="status-indicator"></span>
+        <span id="sync-status-text">Initializing...</span>
+      </div>
+      <select id="hub-filter" aria-label="Filter routes by hub" style="height:34px;padding:0 10px;border:1px solid var(--border-strong);border-radius:8px;background:#fff;">
+        <option value="ALL">All Hubs &amp; Routes</option>
+      </select>
+      <button type="button" class="btn btn-primary" id="open-editor-btn">Network Editor</button>
+    </div>
+  </header>
+
+  <main class="map-stage">
+    <svg id="network-map" role="img" aria-label="World route network map"></svg>
+
+    <div class="map-legend">
+      <div class="legend-item"><span class="legend-hub"></span> Primary Hub</div>
+      <div class="legend-item"><span class="legend-dest"></span> Destination</div>
+      <div class="legend-item"><span class="legend-line"></span> Active Route</div>
+    </div>
+
+    <div class="map-controls">
+      <button type="button" class="btn btn-sm" id="zoom-in-btn" title="Zoom in">+</button>
+      <button type="button" class="btn btn-sm" id="zoom-out-btn" title="Zoom out">&minus;</button>
+      <button type="button" class="btn btn-sm" id="zoom-reset-btn" title="Reset view">Reset</button>
+    </div>
+  </main>
+
+  <!-- Authentication Modal -->
+  <div class="modal-backdrop" id="auth-modal" aria-hidden="true">
+    <div class="modal-card modal-sm" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <div class="modal-header">
+        <h2 id="auth-modal-title">Editor Authentication</h2>
+        <button type="button" class="btn btn-sm" id="close-auth-btn">Close</button>
+      </div>
+      <form id="auth-form">
+        <div class="modal-body">
+          <p class="hint-text">Sign in with your authorized editor account to unlock the Network Editor and publish shared updates.</p>
+          <div class="field">
+            <label for="auth-email">Editor Email</label>
+            <input type="email" id="auth-email" autocomplete="email" placeholder="editor@example.com" required />
+          </div>
+          <div class="field">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" autocomplete="current-password" placeholder="Enter your password" required />
+          </div>
+          <div class="error-msg" id="auth-error"></div>
+        </div>
+        <div class="modal-footer">
+          <span class="hint-text" id="auth-mode-note">Firebase Authentication</span>
+          <button type="submit" class="btn btn-primary" id="auth-submit-btn">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Network Editor Modal -->
+  <div class="modal-backdrop" id="editor-modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editor-modal-title">
+      <div class="modal-header">
+        <h2 id="editor-modal-title">Network Editor</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="hint-text" id="editor-user-badge"></span>
+          <button type="button" class="btn btn-sm" id="signout-btn" style="display:none;">Sign Out</button>
+          <button type="button" class="btn btn-sm" id="close-editor-btn">Close</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <!-- Airports & Hubs -->
+        <section class="editor-section">
+          <h3>Airports &amp; Hubs</h3>
+          <form id="add-airport-form" class="form-grid-hub">
+            <div class="field">
+              <label for="airport-city">City Name</label>
+              <input type="text" id="airport-city" placeholder="e.g. Vienna" required />
+            </div>
+            <div class="field">
+              <label for="airport-icao">ICAO Code</label>
+              <input type="text" id="airport-icao" maxlength="4" placeholder="e.g. LOWW" style="text-transform:uppercase;" required />
+            </div>
+            <div class="field">
+              <label for="airport-lat">Latitude</label>
+              <input type="number" id="airport-lat" step="0.0001" min="-85" max="85" placeholder="48.1103" required />
+            </div>
+            <div class="field">
+              <label for="airport-lon">Longitude</label>
+              <input type="number" id="airport-lon" step="0.0001" min="-180" max="180" placeholder="16.5697" required />
+            </div>
+            <div class="field">
+              <label for="airport-type">Role</label>
+              <div style="display:flex;gap:8px;">
+                <select id="airport-type" style="width:120px;">
+                  <option value="dest">Destination</option>
+                  <option value="hub">Primary Hub</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Add</button>
+              </div>
+            </div>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>ICAO</th>
+                  <th>Coordinates</th>
+                  <th>Role</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="airports-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Routes -->
+        <section class="editor-section">
+          <h3>Flight Routes</h3>
+          <form id="add-route-form" class="form-grid-route">
+            <div class="field">
+              <label for="route-origin">Origin Airport</label>
+              <select id="route-origin" required></select>
+            </div>
+            <div class="field">
+              <label for="route-dest">Destination Airport</label>
+              <select id="route-dest" required></select>
+            </div>
+            <div class="field">
+              <label for="route-freq">Frequency</label>
+              <input type="text" id="route-freq" placeholder="e.g. Daily" value="Daily" />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <button type="submit" class="btn btn-primary">Add Route</button>
+            </div>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Origin</th>
+                  <th>Destination</th>
+                  <th>Frequency</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="routes-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="error-msg" id="editor-error"></div>
+      </div>
+
+      <div class="modal-footer">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-sm" id="export-json-btn">Export JSON</button>
+          <button type="button" class="btn btn-sm" id="reset-default-btn">Reset Sample Data</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" class="btn btn-primary" id="save-network-btn">Save &amp; Publish Online</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Configuration (Safe to commit once Firestore Rules & API Key HTTP referrer restrictions are enabled) -->
+  <script src="./firebase-config.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const LOCAL_STORAGE_KEY = "global_route_network_v2";
+    const FIRESTORE_COLLECTION = "networkState";
+    const FIRESTORE_DOC_ID = "default";
+
+    const DEFAULT_NETWORK = {
+      airports: [
+        { icao: "LOWW", city: "vienna", lat: 48.1103, lon: 16.5697, isHub: true },
+        { icao: "EGLL", city: "london", lat: 51.4700, lon: -0.4543, isHub: false },
+        { icao: "EKCH", city: "copenhagen", lat: 55.6180, lon: 12.6508, isHub: false },
+        { icao: "LEMD", city: "madrid", lat: 40.4983, lon: -3.5676, isHub: false },
+        { icao: "LIRF", city: "rome", lat: 41.8003, lon: 12.2389, isHub: false },
+        { icao: "LGAV", city: "athens", lat: 37.9364, lon: 23.9445, isHub: false },
+        { icao: "KJFK", city: "new york", lat: 40.6413, lon: -73.7781, isHub: false },
+        { icao: "KORD", city: "chicago", lat: 41.9742, lon: -87.9073, isHub: false },
+        { icao: "CYVR", city: "vancouver", lat: 49.1967, lon: -123.1815, isHub: false },
+        { icao: "ZBAA", city: "beijing", lat: 40.0799, lon: 116.6031, isHub: false },
+        { icao: "RJTT", city: "tokyo", lat: 35.5494, lon: 139.7798, isHub: false }
+      ],
+      routes: [
+        { origin: "LOWW", dest: "EGLL", frequency: "4x Daily" },
+        { origin: "LOWW", dest: "EKCH", frequency: "2x Daily" },
+        { origin: "LOWW", dest: "LEMD", frequency: "2x Daily" },
+        { origin: "LOWW", dest: "LIRF", frequency: "3x Daily" },
+        { origin: "LOWW", dest: "LGAV", frequency: "2x Daily" },
+        { origin: "LOWW", dest: "KJFK", frequency: "Daily" },
+        { origin: "LOWW", dest: "KORD", frequency: "Daily" },
+        { origin: "LOWW", dest: "CYVR", frequency: "5x Weekly" },
+        { origin: "LOWW", dest: "ZBAA", frequency: "5x Weekly" },
+        { origin: "LOWW", dest: "RJTT", frequency: "Daily" }
+      ]
+    };
+
+    let networkData = structuredClone(DEFAULT_NETWORK);
+    let firebaseReady = false;
+    let auth = null;
+    let db = null;
+    let stateDocRef = null;
+    let currentUser = null;
+
+    const statusPill = document.getElementById("sync-status");
+    const statusText = document.getElementById("sync-status-text");
+
+    function setSyncStatus(state, text) {
+      statusPill.dataset.state = state;
+      statusText.textContent = text;
+    }
+
+    function isFirebaseConfigured() {
+      const cfg = window.FIREBASE_CONFIG;
+      if (!cfg || typeof cfg !== "object") return false;
+      if (!cfg.apiKey || !cfg.projectId || !cfg.authDomain) return false;
+      if (String(cfg.apiKey).includes("YOUR_") || String(cfg.projectId).includes("YOUR_")) return false;
+      return true;
+    }
+
+    function saveLocalBackup(data) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+      } catch (err) {
+        console.warn("Local backup skipped:", err);
+      }
+    }
+
+    function loadLocalBackup() {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.airports) && Array.isArray(parsed.routes)) {
+          return parsed;
+        }
+      } catch (err) {
+        console.warn("Failed reading local backup:", err);
+      }
+      return null;
+    }
+
+    function sanitizeNetworkPayload(payload) {
+      if (!payload || !Array.isArray(payload.airports) || !Array.isArray(payload.routes)) {
+        return structuredClone(DEFAULT_NETWORK);
+      }
+      const airports = payload.airports
+        .filter(a => a && typeof a.icao === "string" && typeof a.city === "string")
+        .map(a => ({
+          icao: a.icao.trim().toUpperCase().slice(0, 4),
+          city: a.city.trim().toLowerCase(),
+          lat: Math.max(-85, Math.min(85, Number(a.lat) || 0)),
+          lon: Math.max(-180, Math.min(180, Number(a.lon) || 0)),
+          isHub: Boolean(a.isHub)
+        }));
+
+      const validCodes = new Set(airports.map(a => a.icao));
+      const routes = payload.routes
+        .filter(r => r && validCodes.has(r.origin) && validCodes.has(r.dest) && r.origin !== r.dest)
+        .map(r => ({
+          origin: r.origin,
+          dest: r.dest,
+          frequency: String(r.frequency || "Daily").trim()
+        }));
+
+      return { airports, routes };
+    }
+
+    async function initBackend() {
+      const localCached = loadLocalBackup();
+      if (localCached) {
+        networkData = sanitizeNetworkPayload(localCached);
+        renderAll();
+      }
+
+      if (!isFirebaseConfigured()) {
+        setSyncStatus("local", "Local Mode (Configure firebase-config.js)");
+        return;
+      }
+
+      try {
+        setSyncStatus("saving", "Connecting to Firestore...");
+        const app = initializeApp(window.FIREBASE_CONFIG);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        stateDocRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
+        firebaseReady = true;
+
+        onAuthStateChanged(auth, (user) => {
+          currentUser = user;
+          updateAuthUI();
+        });
+
+        // Initial fetch + live subscription so every visitor gets updates immediately
+        const snap = await getDoc(stateDocRef);
+        if (snap.exists() && snap.data().payload) {
+          networkData = sanitizeNetworkPayload(snap.data().payload);
+          saveLocalBackup(networkData);
+          renderAll();
+        }
+        setSyncStatus("synced", "Online • Synced");
+
+        onSnapshot(
+          stateDocRef,
+          (docSnap) => {
+            if (docSnap.exists() && docSnap.data().payload) {
+              networkData = sanitizeNetworkPayload(docSnap.data().payload);
+              saveLocalBackup(networkData);
+              renderAll();
+              setSyncStatus("synced", "Online • Synced");
+            }
+          },
+          (err) => {
+            console.error("Firestore listener error:", err);
+            setSyncStatus("error", "Read Error (" + err.code + ")");
+          }
+        );
+      } catch (err) {
+        console.error("Firebase initialization failed:", err);
+        setSyncStatus("error", "Firebase Config Error");
+      }
+    }
+
+    async function persistNetworkOnline() {
+      saveLocalBackup(networkData);
+      if (!firebaseReady || !stateDocRef) {
+        setSyncStatus("local", "Saved Locally Only");
+        return;
+      }
+      if (!currentUser) {
+        throw new Error("You must sign in before publishing changes online.");
+      }
+      setSyncStatus("saving", "Publishing...");
+      await setDoc(stateDocRef, {
+        payload: networkData,
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentUser.email || currentUser.uid
+      });
+      setSyncStatus("synced", "Online • Synced");
+    }
+
+    // =========================================================================
+    // MAP RENDERING (Antimeridian-safe polygons & great-circle arcs)
+    // =========================================================================
+    const svg = d3.select("#network-map");
+    const mapLayer = svg.append("g").attr("class", "map-layer");
+    const landGroup = mapLayer.append("g").attr("class", "land-group");
+    const routesGroup = mapLayer.append("g").attr("class", "routes-group");
+    const nodesGroup = mapLayer.append("g").attr("class", "nodes-group");
+
+    let worldLandGeoJson = null;
+
+    // Sanitize polygons so no ring wraps across +/-180 deg longitude creating horizontal stripes
+    function sanitizeGeoJsonFeatures(geojson) {
+      if (!geojson || !geojson.features) return geojson;
+      const cleanRing = (ring) => {
+        if (!Array.isArray(ring) || ring.length < 4) return null;
+        let maxJump = 0;
+        for (let i = 1; i < ring.length; i++) {
+          const jump = Math.abs(ring[i][0] - ring[i - 1][0]);
+          if (jump > maxJump) maxJump = jump;
+        }
+        // Drop or clamp rings that cross the antimeridian horizontally in equirectangular space
+        if (maxJump > 170) {
+          return ring.map(([lon, lat]) => [
+            Math.max(-179.9, Math.min(179.9, lon)),
+            Math.max(-84, Math.min(84, lat))
+          ]);
+        }
+        return ring.map(([lon, lat]) => [
+          Math.max(-179.99, Math.min(179.99, lon)),
+          Math.max(-84, Math.min(84, lat))
+        ]);
+      };
+
+      const cleanedFeatures = geojson.features.map((feat) => {
+        const geom = feat.geometry;
+        if (!geom) return feat;
+        if (geom.type === "Polygon") {
+          return {
+            ...feat,
+            geometry: {
+              ...geom,
+              coordinates: geom.coordinates.map(cleanRing).filter(Boolean)
+            }
+          };
+        }
+        if (geom.type === "MultiPolygon") {
+          return {
+            ...feat,
+            geometry: {
+              ...geom,
+              coordinates: geom.coordinates
+                .map((poly) => poly.map(cleanRing).filter(Boolean))
+                .filter((poly) => poly.length > 0)
+            }
+          };
+        }
+        return feat;
+      });
+
+      return { ...geojson, features: cleanedFeatures };
+    }
+
+    // Split great-circle arcs cleanly at the +/-180 antimeridian so lines never streak across the map
+    function computeSplitFlightArcs(src, dst, steps = 72) {
+      const interp = d3.geoInterpolate([src.lon, src.lat], [dst.lon, dst.lat]);
+      const segments = [[]];
+      let prevLon = null;
+
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const [lon, lat] = interp(t);
+        if (prevLon !== null && Math.abs(lon - prevLon) > 170) {
+          segments.push([]);
+        }
+        segments[segments.length - 1].push([lon, lat]);
+        prevLon = lon;
+      }
+      return segments.filter((seg) => seg.length >= 2);
+    }
+
+    const zoomBehavior = d3.zoom()
+      .scaleExtent([1, 8])
+      .on("zoom", (event) => {
+        mapLayer.attr("transform", event.transform);
+      });
+
+    svg.call(zoomBehavior);
+
+    document.getElementById("zoom-in-btn").addEventListener("click", () => {
+      svg.transition().duration(250).call(zoomBehavior.scaleBy, 1.4);
+    });
+    document.getElementById("zoom-out-btn").addEventListener("click", () => {
+      svg.transition().duration(250).call(zoomBehavior.scaleBy, 1 / 1.4);
+    });
+    document.getElementById("zoom-reset-btn").addEventListener("click", () => {
+      svg.transition().duration(250).call(zoomBehavior.transform, d3.zoomIdentity);
+    });
+
+    function getMapDimensions() {
+      const rect = document.querySelector(".map-stage").getBoundingClientRect();
+      return {
+        width: Math.max(640, rect.width || 1200),
+        height: Math.max(520, rect.height || 620)
+      };
+    }
+
+    function renderMap() {
+      const { width, height } = getMapDimensions();
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+      const projection = d3.geoNaturalEarth1()
+        .scale(width / 5.4)
+        .translate([width / 2, height / 1.88]);
+
+      const pathGenerator = d3.geoPath().projection(projection);
+
+      if (worldLandGeoJson) {
+        landGroup.selectAll("path")
+          .data(worldLandGeoJson.features)
+          .join("path")
+          .attr("d", pathGenerator)
+          .attr("fill", "#d8dce3")
+          .attr("stroke", "#ffffff")
+          .attr("stroke-width", 0.6);
+      }
+
+      const selectedHub = document.getElementById("hub-filter").value;
+      const airportByIcao = new Map(networkData.airports.map((a) => [a.icao, a]));
+
+      const visibleRoutes = networkData.routes.filter((r) => {
+        if (selectedHub === "ALL") return true;
+        return r.origin === selectedHub || r.dest === selectedHub;
+      });
+
+      const activeIcaos = new Set();
+      if (selectedHub === "ALL") {
+        networkData.airports.forEach((a) => activeIcaos.add(a.icao));
+      } else {
+        activeIcaos.add(selectedHub);
+        visibleRoutes.forEach((r) => {
+          activeIcaos.add(r.origin);
+          activeIcaos.add(r.dest);
+        });
+      }
+
+      const lineBuilder = d3.line()
+        .x((d) => projection(d)[0])
+        .y((d) => projection(d)[1])
+        .curve(d3.curveCatmullRom.alpha(0.5));
+
+      const arcPaths = [];
+      visibleRoutes.forEach((r) => {
+        const src = airportByIcao.get(r.origin);
+        const dst = airportByIcao.get(r.dest);
+        if (!src || !dst) return;
+        const segments = computeSplitFlightArcs(src, dst);
+        segments.forEach((coords, idx) => {
+          arcPaths.push({
+            key: `${r.origin}-${r.dest}-${idx}`,
+            coords
+          });
+        });
+      });
+
+      routesGroup.selectAll("path")
+        .data(arcPaths, (d) => d.key)
+        .join("path")
+        .attr("d", (d) => lineBuilder(d.coords))
+        .attr("fill", "none")
+        .attr("stroke", "#dc2626")
+        .attr("stroke-width", 1.55)
+        .attr("stroke-linecap", "round")
+        .attr("opacity", 0.92);
+
+      const visibleAirports = networkData.airports.filter((a) => activeIcaos.has(a.icao));
+
+      const nodeGroups = nodesGroup.selectAll("g.airport-node")
+        .data(visibleAirports, (d) => d.icao)
+        .join((enter) => {
+          const g = enter.append("g").attr("class", "airport-node");
+          g.append("circle").attr("class", "outer-ring");
+          g.append("circle").attr("class", "inner-dot");
+          g.append("text").attr("class", "map-label-city");
+          g.append("text").attr("class", "map-label-icao");
+          return g;
+        });
+
+      nodeGroups.attr("transform", (d) => {
+        const [x, y] = projection([d.lon, d.lat]);
+        return `translate(${x}, ${y})`;
+      });
+
+      nodeGroups.select("circle.outer-ring")
+        .attr("r", (d) => (d.isHub ? 6.5 : 3.6))
+        .attr("fill", "#ffffff")
+        .attr("stroke", "#dc2626")
+        .attr("stroke-width", (d) => (d.isHub ? 2.4 : 2));
+
+      nodeGroups.select("circle.inner-dot")
+        .attr("r", (d) => (d.isHub ? 2.2 : 0))
+        .attr("fill", "#dc2626");
+
+      nodeGroups.select("text.map-label-city")
+        .attr("y", (d) => (d.isHub ? 15 : 13))
+        .attr("text-anchor", "middle")
+        .text((d) => d.city);
+
+      nodeGroups.select("text.map-label-icao")
+        .attr("y", (d) => (d.isHub ? 24 : 22))
+        .attr("text-anchor", "middle")
+        .text((d) => d.icao);
+    }
+
+    async function loadWorldMap() {
+      try {
+        const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+        const topology = await res.json();
+        const rawGeo = topojson.feature(topology, topology.objects.countries);
+        worldLandGeoJson = sanitizeGeoJsonFeatures(rawGeo);
+        renderMap();
+      } catch (err) {
+        console.error("Failed to load world atlas:", err);
+      }
+    }
+
+    window.addEventListener("resize", () => renderMap());
+
+    // =========================================================================
+    // EDITOR UI, AUTHENTICATION & TABLE RENDERING
+    // =========================================================================
+    const authModal = document.getElementById("auth-modal");
+    const editorModal = document.getElementById("editor-modal");
+    const authError = document.getElementById("auth-error");
+    const editorError = document.getElementById("editor-error");
+
+    function openModal(modal) {
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeModal(modal) {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    function updateAuthUI() {
+      const badge = document.getElementById("editor-user-badge");
+      const signoutBtn = document.getElementById("signout-btn");
+      if (!firebaseReady) {
+        badge.textContent = "Local preview mode";
+        signoutBtn.style.display = "none";
+      } else if (currentUser) {
+        badge.textContent = `Signed in: ${currentUser.email}`;
+        signoutBtn.style.display = "inline-flex";
+      } else {
+        badge.textContent = "Not signed in";
+        signoutBtn.style.display = "none";
+      }
+    }
+
+    document.getElementById("open-editor-btn").addEventListener("click", () => {
+      editorError.textContent = "";
+      authError.textContent = "";
+      updateAuthUI();
+      if (firebaseReady && !currentUser) {
+        openModal(authModal);
+      } else {
+        openModal(editorModal);
+      }
+    });
+
+    document.getElementById("close-auth-btn").addEventListener("click", () => closeModal(authModal));
+    document.getElementById("close-editor-btn").addEventListener("click", () => closeModal(editorModal));
+
+    document.getElementById("auth-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      authError.textContent = "";
+      const email = document.getElementById("auth-email").value.trim();
+      const password = document.getElementById("auth-password").value;
+      const submitBtn = document.getElementById("auth-submit-btn");
+      submitBtn.disabled = true;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        document.getElementById("auth-password").value = "";
+        closeModal(authModal);
+        openModal(editorModal);
+      } catch (err) {
+        authError.textContent = "Authentication failed. Check your email and password.";
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById("signout-btn").addEventListener("click", async () => {
+      if (auth) {
+        await signOut(auth);
+      }
+      closeModal(editorModal);
+    });
+
+    function renderDropdownsAndTables() {
+      const hubFilter = document.getElementById("hub-filter");
+      const prevHub = hubFilter.value;
+      const hubs = networkData.airports.filter((a) => a.isHub);
+
+      hubFilter.innerHTML = `<option value="ALL">All Hubs &amp; Routes (${networkData.routes.length})</option>` +
+        hubs.map((h) => `<option value="${h.icao}">${h.city.toUpperCase()} (${h.icao})</option>`).join("");
+      if ([...hubFilter.options].some((o) => o.value === prevHub)) {
+        hubFilter.value = prevHub;
+      }
+
+      document.getElementById("network-summary").textContent =
+        `${hubs.length} hub${hubs.length === 1 ? "" : "s"} • ${networkData.airports.length} airports • ${networkData.routes.length} routes`;
+
+      const sortedAirports = [...networkData.airports].sort((a, b) => a.city.localeCompare(b.city));
+      const airportOptions = sortedAirports
+        .map((a) => `<option value="${a.icao}">${a.city.toUpperCase()} (${a.icao})</option>`)
+        .join("");
+
+      const originSel = document.getElementById("route-origin");
+      const destSel = document.getElementById("route-dest");
+      originSel.innerHTML = airportOptions;
+      destSel.innerHTML = airportOptions;
+      if (sortedAirports.length > 1) {
+        destSel.selectedIndex = 1;
+      }
+
+      // Airports table
+      const airportsBody = document.getElementById("airports-table-body");
+      airportsBody.innerHTML = sortedAirports.map((a) => `
+        <tr>
+          <td style="text-transform:capitalize;font-weight:600;">${a.city}</td>
+          <td><code>${a.icao}</code></td>
+          <td>${a.lat.toFixed(2)}, ${a.lon.toFixed(2)}</td>
+          <td>${a.isHub ? '<span class="badge-hub">Primary Hub</span>' : 'Destination'}</td>
+          <td style="text-align:right;white-space:nowrap;">
+            <button type="button" class="btn btn-sm" data-toggle-hub="${a.icao}">${a.isHub ? "Set Dest" : "Set Hub"}</button>
+            <button type="button" class="btn btn-sm btn-danger" data-del-airport="${a.icao}">Remove</button>
+          </td>
+        </tr>
+      `).join("");
+
+      // Routes table
+      const airportMap = new Map(networkData.airports.map((a) => [a.icao, a]));
+      const routesBody = document.getElementById("routes-table-body");
+      routesBody.innerHTML = networkData.routes.map((r, idx) => {
+        const o = airportMap.get(r.origin);
+        const d = airportMap.get(r.dest);
+        return `
+          <tr>
+            <td><strong>${o ? o.city.toUpperCase() : r.origin}</strong> (${r.origin})</td>
+            <td><strong>${d ? d.city.toUpperCase() : r.dest}</strong> (${r.dest})</td>
+            <td>${r.frequency}</td>
+            <td style="text-align:right;">
+              <button type="button" class="btn btn-sm btn-danger" data-del-route="${idx}">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderAll() {
+      renderDropdownsAndTables();
+      renderMap();
+    }
+
+    document.getElementById("hub-filter").addEventListener("change", renderMap);
+
+    document.getElementById("add-airport-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      editorError.textContent = "";
+      const city = document.getElementById("airport-city").value.trim().toLowerCase();
+      const icao = document.getElementById("airport-icao").value.trim().toUpperCase();
+      const lat = parseFloat(document.getElementById("airport-lat").value);
+      const lon = parseFloat(document.getElementById("airport-lon").value);
+      const isHub = document.getElementById("airport-type").value === "hub";
+
+      if (!/^[A-Z0-9]{3,4}$/.test(icao)) {
+        editorError.textContent = "ICAO/IATA code must be 3–4 letters or digits.";
+        return;
+      }
+      if (Number.isNaN(lat) || Number.isNaN(lon)) {
+        editorError.textContent = "Please provide valid latitude and longitude values.";
+        return;
+      }
+
+      const existingIdx = networkData.airports.findIndex((a) => a.icao === icao);
+      const entry = { icao, city, lat, lon, isHub };
+      if (existingIdx >= 0) {
+        networkData.airports[existingIdx] = entry;
+      } else {
+        networkData.airports.push(entry);
+      }
+
+      e.target.reset();
+      renderAll();
+    });
+
+    document.getElementById("airports-table-body").addEventListener("click", (e) => {
+      const toggleIcao = e.target.getAttribute("data-toggle-hub");
+      if (toggleIcao) {
+        const airport = networkData.airports.find((a) => a.icao === toggleIcao);
+        if (airport) airport.isHub = !airport.isHub;
+        renderAll();
+        return;
+      }
+      const delIcao = e.target.getAttribute("data-del-airport");
+      if (delIcao) {
+        networkData.airports = networkData.airports.filter((a) => a.icao !== delIcao);
+        networkData.routes = networkData.routes.filter((r) => r.origin !== delIcao && r.dest !== delIcao);
+        renderAll();
+      }
+    });
+
+    document.getElementById("add-route-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      editorError.textContent = "";
+      const origin = document.getElementById("route-origin").value;
+      const dest = document.getElementById("route-dest").value;
+      const frequency = document.getElementById("route-freq").value.trim() || "Daily";
+
+      if (origin === dest) {
+        editorError.textContent = "Origin and destination airports must be different.";
+        return;
+      }
+      const duplicate = networkData.routes.some((r) => r.origin === origin && r.dest === dest);
+      if (duplicate) {
+        editorError.textContent = "That route already exists in the network.";
+        return;
+      }
+
+      networkData.routes.push({ origin, dest, frequency });
+      renderAll();
+    });
+
+    document.getElementById("routes-table-body").addEventListener("click", (e) => {
+      const idxStr = e.target.getAttribute("data-del-route");
+      if (idxStr !== null) {
+        const idx = Number(idxStr);
+        networkData.routes.splice(idx, 1);
+        renderAll();
+      }
+    });
+
+    document.getElementById("save-network-btn").addEventListener("click", async () => {
+      editorError.textContent = "";
+      const btn = document.getElementById("save-network-btn");
+      btn.disabled = true;
+      try {
+        await persistNetworkOnline();
+        closeModal(editorModal);
+      } catch (err) {
+        editorError.textContent = err.message || "Failed to publish changes online.";
+        setSyncStatus("error", "Publish Failed");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById("export-json-btn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(networkData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "route-network-backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById("reset-default-btn").addEventListener("click", () => {
+      networkData = structuredClone(DEFAULT_NETWORK);
+      renderAll();
+    });
+
+    // Boot
+    renderAll();
+    loadWorldMap();
+    initBackend();
+  </script>
+</body>
+</html>
