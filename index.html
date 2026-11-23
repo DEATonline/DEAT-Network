@@ -1212,43 +1212,106 @@
       return Math.round(rad * 6371);
     }
 
-    // Scale label sizes smoothly as zoom changes so labels remain crisp and readable at any zoom level
+    let currentZoomTransform = d3.zoomIdentity;
+
+    function estimateLabelBox(ap, screenPt) {
+      const isHub = Boolean(ap.isHub);
+      const isSel = ap.icao === selectedAirportIcao;
+      const cityText = String(ap.city || "");
+      const avgCharW = isHub || isSel ? 6.8 : 5.8;
+      const textW = Math.max(38, Math.min(130, cityText.length * avgCharW + 12));
+      const boxH = isHub || isSel ? 24 : 16;
+      const x = screenPt[0] - textW / 2;
+      const y = screenPt[1] + 5;
+      return { left: x, right: x + textW, top: y, bottom: y + boxH };
+    }
+
+    function boxesOverlap(a, b, pad = 3) {
+      return !(
+        a.right + pad < b.left ||
+        a.left - pad > b.right ||
+        a.bottom + pad < b.top ||
+        a.top - pad > b.bottom
+      );
+    }
+
+    // Google Maps-like screen-space markers & bounding-box collision decluttering:
+    // Airport markers ALWAYS remain visible; labels stay crisp in screen space and progressively appear as you zoom in.
     function applyZoomScaledLabelStyles(scale) {
-      const labelFactor = Math.pow(1 / Math.max(0.6, scale), 0.62);
-      const citySize = Math.max(5.5, Math.min(16, 10.5 * labelFactor));
-      const icaoSize = Math.max(4.5, Math.min(13, 8.5 * labelFactor));
-      const strokeW = Math.max(1.2, Math.min(4.2, 2.5 * labelFactor));
+      const k = Math.max(1, scale || 1);
+      const invK = 1 / k;
 
-      nodesGroup.selectAll("text.map-label-city")
-        .style("font-size", `${citySize.toFixed(2)}px`)
-        .style("stroke-width", `${strokeW.toFixed(2)}px`)
-        .attr("y", (d) => ((d.isHub ? 14 : 12) * labelFactor).toFixed(2));
-
-      nodesGroup.selectAll("text.map-label-icao")
-        .style("font-size", `${icaoSize.toFixed(2)}px`)
-        .style("stroke-width", `${strokeW.toFixed(2)}px`)
-        .attr("y", (d) => ((d.isHub ? 23.5 : 21) * labelFactor).toFixed(2));
-
-      nodesGroup.selectAll("circle.outer-ring")
-        .attr("r", (d) => {
-          const baseR = d.icao === selectedAirportIcao ? 7.5 : d.isHub ? 6 : 3.6;
-          return (baseR * Math.pow(1 / Math.max(0.75, scale), 0.45)).toFixed(2);
-        })
-        .attr("stroke-width", (d) => {
-          const baseW = d.icao === selectedAirportIcao ? 2.8 : d.isHub ? 2.2 : 1.8;
-          return (baseW * Math.pow(1 / Math.max(0.75, scale), 0.45)).toFixed(2);
+      // Counter-scale each airport marker group so pins stay sharp, clean, and uniform in screen pixels
+      nodesGroup.selectAll("g.airport-node")
+        .attr("transform", (d) => {
+          const base = d._basePos || [0, 0];
+          return `translate(${base[0]}, ${base[1]}) scale(${invK.toFixed(4)})`;
         });
 
+      nodesGroup.selectAll("circle.outer-ring")
+        .attr("r", (d) => (d.icao === selectedAirportIcao ? 7.5 : d.isHub ? 6.2 : 4.2))
+        .attr("stroke-width", (d) => (d.icao === selectedAirportIcao ? 2.8 : d.isHub ? 2.4 : 1.9));
+
       nodesGroup.selectAll("circle.inner-dot")
-        .attr("r", (d) => {
-          if (!d.isHub && d.icao !== selectedAirportIcao) return 0;
-          return (2.2 * Math.pow(1 / Math.max(0.75, scale), 0.45)).toFixed(2);
+        .attr("r", (d) => (d.isHub || d.icao === selectedAirportIcao ? 2.3 : 0));
+
+      // Compute screen-space bounding boxes for labels so dense regions never turn into unreadable text soup
+      const placedBoxes = [];
+      const showLabelSet = new Set();
+
+      const allNodes = nodesGroup.selectAll("g.airport-node").data();
+      const rankScore = (ap) => {
+        let s = 0;
+        if (ap.icao === selectedAirportIcao) s += 1000;
+        if (ap.isHub) s += 500;
+        if (k >= 2.2) s += 80;
+        if (k >= 4.0) s += 120;
+        // Slight deterministic tie-breaker by ICAO so labels don't jitter wildly during pan
+        s -= (ap.icao.charCodeAt(3) || 0) * 0.1;
+        return s;
+      };
+
+      const sortedForLabels = [...allNodes].sort((a, b) => rankScore(b) - rankScore(a));
+
+      for (const ap of sortedForLabels) {
+        const base = ap._basePos;
+        if (!base || Number.isNaN(base[0]) || Number.isNaN(base[1])) continue;
+        const screenPt = currentZoomTransform.apply(base);
+
+        // At zoom = 1, show hubs, selected airport, and non-overlapping major/spaced cities
+        // As zoom increases, collision boxes tighten slightly so nearby airports smoothly pop in
+        const pad = k >= 5 ? 1 : k >= 2.8 ? 2 : 5;
+        const box = estimateLabelBox(ap, screenPt);
+        const collides = placedBoxes.some((b) => boxesOverlap(box, b, pad));
+        const mustShow = ap.icao === selectedAirportIcao || ap.isHub;
+
+        if (mustShow || !collides) {
+          showLabelSet.add(ap.icao);
+          placedBoxes.push(box);
+        }
+      }
+
+      nodesGroup.selectAll("text.map-label-city")
+        .style("font-size", (d) => (d.isHub || d.icao === selectedAirportIcao ? "11.5px" : "10px"))
+        .style("stroke-width", "3px")
+        .attr("y", (d) => (d.isHub || d.icao === selectedAirportIcao ? 16 : 14))
+        .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"));
+
+      nodesGroup.selectAll("text.map-label-icao")
+        .style("font-size", "9px")
+        .style("stroke-width", "2.6px")
+        .attr("y", (d) => (d.isHub || d.icao === selectedAirportIcao ? 26 : 23))
+        .style("display", (d) => {
+          if (!showLabelSet.has(d.icao)) return "none";
+          // Show ICAO sub-label for hubs, selected airport, or when zoomed in (>= 2.2x)
+          return (d.isHub || d.icao === selectedAirportIcao || k >= 2.2) ? null : "none";
         });
     }
 
     const zoomBehavior = d3.zoom()
       .scaleExtent([1, 12])
       .on("zoom", (event) => {
+        currentZoomTransform = event.transform;
         currentZoomScale = event.transform.k || 1;
         mapLayer.attr("transform", event.transform);
         applyZoomScaledLabelStyles(currentZoomScale);
@@ -1400,10 +1463,15 @@
           return g;
         });
 
+      visibleAirports.forEach((d) => {
+        d._basePos = projection([d.lon, d.lat]);
+      });
+
       nodeGroups
         .attr("transform", (d) => {
-          const [x, y] = projection([d.lon, d.lat]);
-          return `translate(${x}, ${y})`;
+          const [x, y] = d._basePos || [0, 0];
+          const invK = 1 / Math.max(1, currentZoomScale || 1);
+          return `translate(${x}, ${y}) scale(${invK.toFixed(4)})`;
         })
         .on("click", (event, d) => {
           event.stopPropagation();
@@ -1417,40 +1485,14 @@
       nodeGroups.select("circle.inner-dot")
         .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"));
 
-      // Prevent overlapping labels in dense regions (like Central Europe) while keeping hubs & selected nodes visible
-      const projectedCoords = new Map(visibleAirports.map((d) => [d.icao, projection([d.lon, d.lat])]));
-      const minLabelSpacingPx = currentZoomScale >= 3.2 ? 22 : currentZoomScale >= 1.8 ? 34 : 48;
-      const placedLabelPoints = [];
-
-      const prioritizedForLabels = [...visibleAirports].sort((a, b) => {
-        const aSel = a.icao === selectedAirportIcao ? 2 : 0;
-        const bSel = b.icao === selectedAirportIcao ? 2 : 0;
-        const aHub = a.isHub ? 1 : 0;
-        const bHub = b.isHub ? 1 : 0;
-        return (bSel + bHub) - (aSel + aHub);
-      });
-
-      const showLabelSet = new Set();
-      for (const ap of prioritizedForLabels) {
-        const pt = projectedCoords.get(ap.icao);
-        if (!pt || Number.isNaN(pt[0]) || Number.isNaN(pt[1])) continue;
-        const alwaysShow = ap.icao === selectedAirportIcao || ap.isHub || currentZoomScale >= 5.5;
-        const collides = placedLabelPoints.some(([px, py]) => Math.hypot(pt[0] - px, pt[1] - py) < minLabelSpacingPx);
-        if (alwaysShow || !collides) {
-          showLabelSet.add(ap.icao);
-          placedLabelPoints.push(pt);
-        }
-      }
-
       nodeGroups.select("text.map-label-city")
         .attr("text-anchor", "middle")
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"))
-        .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"))
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#0f172a"))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
         .attr("text-anchor", "middle")
-        .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"))
+        .attr("fill", "#64748b")
         .text((d) => d.icao);
 
       applyZoomScaledLabelStyles(currentZoomScale);
