@@ -16,7 +16,7 @@
       --border-strong: #cbd5e1;
       --text: #0f172a;
       --text-muted: #64748b;
-      --route-color: #dc2626;
+      --accent: #dc2626;
       --route-highlight: #0284c7;
       --land: #dce0e6;
       --land-stroke: #ffffff;
@@ -87,8 +87,8 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: var(--route-color);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--route-color) 20%, transparent);
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.16);
       flex-shrink: 0;
     }
 
@@ -169,25 +169,69 @@
       cursor: pointer;
     }
 
-    .color-picker-wrap {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: var(--control-h);
-      padding: 0 8px;
-      border: 1px solid var(--border-strong);
-      border-radius: 8px;
-      background: #ffffff;
-      font-size: 11.5px;
-      font-weight: 600;
-      color: var(--text-muted);
+    /* Toggleable Multi-Aircraft Filter Dropdown */
+    .multi-filter-wrap {
+      position: relative;
     }
 
-    .color-picker-wrap input[type="color"] {
-      width: 20px;
-      height: 20px;
-      border: none;
+    .multi-filter-popover {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 220px;
+      max-height: 280px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      padding: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 60;
+    }
+
+    .multi-filter-popover.open {
+      display: flex;
+    }
+
+    .multi-filter-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .multi-filter-item:hover {
+      background: var(--surface-muted);
+    }
+
+    .multi-filter-item input[type="checkbox"] {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .multi-filter-actions {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 6px 6px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2px;
+      font-size: 11px;
+    }
+
+    .multi-filter-link {
       background: none;
+      border: none;
+      color: var(--route-highlight);
+      font-weight: 600;
+      font-size: 11px;
       cursor: pointer;
       padding: 0;
     }
@@ -214,15 +258,14 @@
     }
 
     .btn-primary {
-      background: var(--route-color);
-      border-color: var(--route-color);
+      background: var(--accent);
+      border-color: var(--accent);
       color: #ffffff;
     }
 
     .btn-primary:hover {
-      filter: brightness(0.92);
-      background: var(--route-color);
-      border-color: var(--route-color);
+      background: #b91c1c;
+      border-color: #b91c1c;
     }
 
     .btn-danger {
@@ -270,7 +313,7 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      border: 2.5px solid var(--route-color);
+      border: 2.5px solid var(--accent);
       background: #ffffff;
     }
 
@@ -278,14 +321,15 @@
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      border: 2px solid var(--route-color);
+      border: 2px solid var(--accent);
       background: #ffffff;
     }
 
     .legend-line {
       width: 18px;
-      height: 2px;
-      background: var(--route-color);
+      height: 2.5px;
+      background: var(--accent);
+      border-radius: 2px;
     }
 
     /* Floating Zoom Controls (Bottom-Right) */
@@ -305,12 +349,12 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Interactive Inspector Drawer (Left side when clicking an airport or route) */
+    /* Interactive Inspector Drawer */
     .inspector-card {
       position: fixed;
       top: 78px;
       left: 16px;
-      width: 310px;
+      width: 320px;
       max-height: calc(100vh - 145px);
       overflow-y: auto;
       z-index: 35;
@@ -343,7 +387,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--route-color);
+      color: var(--accent);
     }
 
     .inspector-title {
@@ -374,9 +418,10 @@
     }
 
     .inspector-stat-val {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 700;
       margin-top: 2px;
+      word-break: break-word;
     }
 
     .inspector-list {
@@ -389,6 +434,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       padding: 7px 10px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -398,7 +444,15 @@
     }
 
     .inspector-route-item:hover {
-      border-color: var(--route-color);
+      border-color: var(--route-highlight);
+    }
+
+    .route-swatch-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
     }
 
     /* Empty Network Overlay Prompt */
@@ -439,28 +493,24 @@
       fill: none;
       stroke-linecap: round;
       pointer-events: none;
-      transition: stroke-width 0.15s ease, opacity 0.15s ease;
+      transition: opacity 0.15s ease;
     }
 
     .map-label-city {
-      font-size: 10.5px;
       font-weight: 700;
       font-style: italic;
       pointer-events: none;
       paint-order: stroke;
       stroke: #ffffff;
-      stroke-width: 2.6px;
       stroke-linejoin: round;
     }
 
     .map-label-icao {
-      font-size: 8.5px;
       font-weight: 700;
       fill: #1e293b;
       pointer-events: none;
       paint-order: stroke;
       stroke: #ffffff;
-      stroke-width: 2.6px;
       stroke-linejoin: round;
     }
 
@@ -486,7 +536,7 @@
       border-radius: 14px;
       box-shadow: var(--shadow-lg);
       width: 100%;
-      max-width: 980px;
+      max-width: 1020px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
@@ -550,19 +600,19 @@
 
     .form-grid-airport {
       display: grid;
-      grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.1fr);
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.15fr);
       gap: 10px;
       align-items: end;
     }
 
     .form-grid-route {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.8fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.8fr) auto auto;
       gap: 10px;
       align-items: end;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       .form-grid-airport,
       .form-grid-route {
         grid-template-columns: minmax(0, 1fr);
@@ -596,9 +646,14 @@
       outline: none;
     }
 
+    .field input[type="color"] {
+      padding: 2px 4px;
+      cursor: pointer;
+    }
+
     .field input:focus,
     .field select:focus {
-      border-color: var(--route-color);
+      border-color: var(--accent);
     }
 
     .table-wrap {
@@ -638,10 +693,21 @@
       display: inline-block;
       padding: 2px 7px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--route-color) 15%, #ffffff);
-      color: var(--route-color);
+      background: #fee2e2;
+      color: var(--accent);
       font-size: 11px;
       font-weight: 700;
+    }
+
+    .ac-chip {
+      display: inline-block;
+      padding: 2px 6px;
+      margin: 1px 2px 1px 0;
+      border-radius: 5px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
     }
 
     .error-msg {
@@ -672,7 +738,7 @@
     </div>
   </div>
 
-  <!-- Floating Controls & Filters HUD -->
+  <!-- Floating Controls & Filters HUD (No map color editor) -->
   <div class="hud-controls">
     <div class="status-pill" id="sync-status" data-state="saving" title="Firebase synchronization status">
       <span class="status-dot"></span>
@@ -694,14 +760,19 @@
       <option value="Oceania">Oceania</option>
     </select>
 
-    <select id="filter-aircraft" class="hud-select" aria-label="Filter by aircraft type">
-      <option value="ALL">All Aircraft</option>
-    </select>
-
-    <label class="color-picker-wrap" title="Customize network route color">
-      <span>Route Color</span>
-      <input type="color" id="route-color-picker" value="#dc2626" />
-    </label>
+    <!-- Multi-aircraft toggle filter -->
+    <div class="multi-filter-wrap">
+      <button type="button" class="hud-select" id="aircraft-toggle-btn" aria-expanded="false">
+        Aircraft: All
+      </button>
+      <div class="multi-filter-popover" id="aircraft-popover" role="group" aria-label="Toggle aircraft types">
+        <div class="multi-filter-actions">
+          <button type="button" class="multi-filter-link" id="ac-select-all">Select All</button>
+          <button type="button" class="multi-filter-link" id="ac-clear-all">Clear</button>
+        </div>
+        <div id="aircraft-checkbox-list"></div>
+      </div>
+    </div>
 
     <button type="button" class="btn btn-primary" id="open-editor-btn">Network Editor</button>
   </div>
@@ -843,9 +914,9 @@
           </div>
         </section>
 
-        <!-- Routes -->
+        <!-- Routes with per-route color and multiple aircraft types -->
         <section class="editor-section">
-          <h3>Flight Routes (Add or Edit Existing)</h3>
+          <h3>Flight Routes (Per-Route Color &amp; Multiple Aircraft Types)</h3>
           <form id="add-route-form" class="form-grid-route">
             <div class="field">
               <label for="route-origin">Origin Airport</label>
@@ -856,12 +927,16 @@
               <select id="route-dest" required></select>
             </div>
             <div class="field">
-              <label for="route-aircraft">Aircraft Type</label>
-              <input type="text" id="route-aircraft" placeholder="e.g. A320neo, B787-9" value="A320neo" required />
+              <label for="route-aircraft">Aircraft Types (comma-separated)</label>
+              <input type="text" id="route-aircraft" placeholder="e.g. A320neo, B787-9, A350-900" value="A320neo" required />
             </div>
             <div class="field">
               <label for="route-freq">Frequency</label>
               <input type="text" id="route-freq" placeholder="e.g. Daily" value="Daily" />
+            </div>
+            <div class="field">
+              <label for="route-color">Route Color</label>
+              <input type="color" id="route-color" value="#dc2626" title="Choose color for this route" />
             </div>
             <div class="field">
               <label>&nbsp;</label>
@@ -873,9 +948,10 @@
             <table>
               <thead>
                 <tr>
+                  <th>Color</th>
                   <th>Origin</th>
                   <th>Destination</th>
-                  <th>Aircraft</th>
+                  <th>Aircraft Types</th>
                   <th>Frequency</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
@@ -909,13 +985,17 @@
 
     const FIRESTORE_COLLECTION = "networkState";
     const FIRESTORE_DOC_ID = "default";
+    const DEFAULT_ROUTE_COLOR = "#dc2626";
 
     // Zero hardcoded sample routes/airports — populated exclusively from Firebase Firestore
     let networkData = {
       airports: [],
-      routes: [],
-      routeColor: "#dc2626"
+      routes: []
     };
+
+    // Active toggled aircraft types for multi-select filtering; empty set = all aircraft allowed
+    let selectedAircraftSet = new Set();
+    let currentZoomScale = 1;
 
     let firebaseReady = false;
     let auth = null;
@@ -923,24 +1003,15 @@
     let stateDocRef = null;
     let currentUser = null;
 
-    // Interactive selection state for map highlighting & inspector
     let selectedAirportIcao = null;
     let selectedRouteKey = null;
 
     const statusPill = document.getElementById("sync-status");
     const statusText = document.getElementById("sync-status-text");
-    const colorPicker = document.getElementById("route-color-picker");
 
     function setSyncStatus(state, text) {
       statusPill.dataset.state = state;
       statusText.textContent = text;
-    }
-
-    function applyRouteThemeColor(hex) {
-      const validHex = /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : "#dc2626";
-      networkData.routeColor = validHex;
-      document.documentElement.style.setProperty("--route-color", validHex);
-      colorPicker.value = validHex;
     }
 
     function isFirebaseConfigured() {
@@ -951,9 +1022,19 @@
       return true;
     }
 
+    function parseAircraftList(raw) {
+      if (Array.isArray(raw)) {
+        return [...new Set(raw.map((item) => String(item || "").trim()).filter(Boolean))];
+      }
+      if (typeof raw === "string") {
+        return [...new Set(raw.split(",").map((item) => item.trim()).filter(Boolean))];
+      }
+      return ["A320neo"];
+    }
+
     function sanitizeNetworkPayload(payload) {
       if (!payload || typeof payload !== "object") {
-        return { airports: [], routes: [], routeColor: "#dc2626" };
+        return { airports: [], routes: [] };
       }
       const rawAirports = Array.isArray(payload.airports) ? payload.airports : [];
       const rawRoutes = Array.isArray(payload.routes) ? payload.routes : [];
@@ -972,15 +1053,21 @@
       const validCodes = new Set(airports.map((a) => a.icao));
       const routes = rawRoutes
         .filter((r) => r && validCodes.has(r.origin) && validCodes.has(r.dest) && r.origin !== r.dest)
-        .map((r) => ({
-          origin: r.origin,
-          dest: r.dest,
-          aircraft: String(r.aircraft || "A320neo").trim(),
-          frequency: String(r.frequency || "Daily").trim()
-        }));
+        .map((r) => {
+          const list = parseAircraftList(r.aircraftTypes || r.aircraft);
+          const color = /^#[0-9A-Fa-f]{6}$/.test(r.color)
+            ? r.color
+            : (/^#[0-9A-Fa-f]{6}$/.test(payload.routeColor) ? payload.routeColor : DEFAULT_ROUTE_COLOR);
+          return {
+            origin: r.origin,
+            dest: r.dest,
+            aircraftTypes: list.length ? list : ["A320neo"],
+            frequency: String(r.frequency || "Daily").trim(),
+            color
+          };
+        });
 
-      const routeColor = /^#[0-9A-Fa-f]{6}$/.test(payload.routeColor) ? payload.routeColor : networkData.routeColor;
-      return { airports, routes, routeColor };
+      return { airports, routes };
     }
 
     async function initFirebaseBackend() {
@@ -1007,7 +1094,6 @@
         const initialSnap = await getDoc(stateDocRef);
         if (initialSnap.exists() && initialSnap.data().payload) {
           networkData = sanitizeNetworkPayload(initialSnap.data().payload);
-          applyRouteThemeColor(networkData.routeColor);
         }
         renderAll();
         setSyncStatus("synced", "Firebase • Live");
@@ -1017,7 +1103,6 @@
           (docSnap) => {
             if (docSnap.exists() && docSnap.data().payload) {
               networkData = sanitizeNetworkPayload(docSnap.data().payload);
-              applyRouteThemeColor(networkData.routeColor);
               renderAll();
             }
             setSyncStatus("synced", "Firebase • Live");
@@ -1044,8 +1129,7 @@
       await setDoc(stateDocRef, {
         payload: {
           airports: networkData.airports,
-          routes: networkData.routes,
-          routeColor: networkData.routeColor
+          routes: networkData.routes
         },
         updatedAt: new Date().toISOString(),
         updatedBy: currentUser.email || currentUser.uid
@@ -1054,7 +1138,7 @@
     }
 
     // =========================================================================
-    // INTERACTIVE D3 WORLD MAP (Smooth Zoom, Pan, IDL Splitting, Selection)
+    // INTERACTIVE D3 WORLD MAP (Zoom-scaled Labels, IDL Splitting, Selection)
     // =========================================================================
     const svg = d3.select("#network-map");
     const mapLayer = svg.append("g").attr("class", "map-layer");
@@ -1096,7 +1180,6 @@
       };
     }
 
-    // Properly split great-circle flight arcs crossing the International Date Line (+/-180 deg)
     function computeSplitFlightArcs(src, dst, steps = 80) {
       const interp = d3.geoInterpolate([src.lon, src.lat], [dst.lon, dst.lat]);
       const segments = [[]];
@@ -1118,15 +1201,50 @@
       return Math.round(rad * 6371);
     }
 
+    // Scale label sizes smoothly as zoom changes so labels remain crisp and readable at any zoom level
+    function applyZoomScaledLabelStyles(scale) {
+      const labelFactor = Math.pow(1 / Math.max(0.6, scale), 0.62);
+      const citySize = Math.max(5.5, Math.min(16, 10.5 * labelFactor));
+      const icaoSize = Math.max(4.5, Math.min(13, 8.5 * labelFactor));
+      const strokeW = Math.max(1.2, Math.min(4.2, 2.5 * labelFactor));
+
+      nodesGroup.selectAll("text.map-label-city")
+        .style("font-size", `${citySize.toFixed(2)}px`)
+        .style("stroke-width", `${strokeW.toFixed(2)}px`)
+        .attr("y", (d) => ((d.isHub ? 14 : 12) * labelFactor).toFixed(2));
+
+      nodesGroup.selectAll("text.map-label-icao")
+        .style("font-size", `${icaoSize.toFixed(2)}px`)
+        .style("stroke-width", `${strokeW.toFixed(2)}px`)
+        .attr("y", (d) => ((d.isHub ? 23.5 : 21) * labelFactor).toFixed(2));
+
+      nodesGroup.selectAll("circle.outer-ring")
+        .attr("r", (d) => {
+          const baseR = d.icao === selectedAirportIcao ? 7.5 : d.isHub ? 6 : 3.6;
+          return (baseR * Math.pow(1 / Math.max(0.75, scale), 0.45)).toFixed(2);
+        })
+        .attr("stroke-width", (d) => {
+          const baseW = d.icao === selectedAirportIcao ? 2.8 : d.isHub ? 2.2 : 1.8;
+          return (baseW * Math.pow(1 / Math.max(0.75, scale), 0.45)).toFixed(2);
+        });
+
+      nodesGroup.selectAll("circle.inner-dot")
+        .attr("r", (d) => {
+          if (!d.isHub && d.icao !== selectedAirportIcao) return 0;
+          return (2.2 * Math.pow(1 / Math.max(0.75, scale), 0.45)).toFixed(2);
+        });
+    }
+
     const zoomBehavior = d3.zoom()
-      .scaleExtent([1, 10])
+      .scaleExtent([1, 12])
       .on("zoom", (event) => {
+        currentZoomScale = event.transform.k || 1;
         mapLayer.attr("transform", event.transform);
+        applyZoomScaledLabelStyles(currentZoomScale);
       });
 
     svg.call(zoomBehavior);
 
-    // Clicking empty ocean/land clears active route/airport selection
     svg.on("click", (event) => {
       if (event.target === svg.node() || event.target.classList.contains("land-path")) {
         clearInspector();
@@ -1146,7 +1264,7 @@
     function getFilteredNetwork() {
       const hubVal = document.getElementById("filter-hub").value;
       const contVal = document.getElementById("filter-continent").value;
-      const acVal = document.getElementById("filter-aircraft").value;
+      const hasAircraftFilter = selectedAircraftSet.size > 0;
 
       const airportByIcao = new Map(networkData.airports.map((a) => [a.icao, a]));
 
@@ -1156,12 +1274,15 @@
         if (!o || !d) return false;
         if (hubVal !== "ALL" && r.origin !== hubVal && r.dest !== hubVal) return false;
         if (contVal !== "ALL" && o.continent !== contVal && d.continent !== contVal) return false;
-        if (acVal !== "ALL" && r.aircraft !== acVal) return false;
+        if (hasAircraftFilter) {
+          const matchesAny = r.aircraftTypes.some((ac) => selectedAircraftSet.has(ac));
+          if (!matchesAny) return false;
+        }
         return true;
       });
 
       const visibleIcaos = new Set();
-      if (hubVal === "ALL" && contVal === "ALL" && acVal === "ALL") {
+      if (hubVal === "ALL" && contVal === "ALL" && !hasAircraftFilter) {
         networkData.airports.forEach((a) => visibleIcaos.add(a.icao));
       } else {
         if (hubVal !== "ALL") visibleIcaos.add(hubVal);
@@ -1201,7 +1322,6 @@
       }
 
       const { filteredRoutes, visibleAirports, airportByIcao } = getFilteredNetwork();
-      const baseColor = networkData.routeColor;
       const highlightColor = "#0284c7";
 
       const lineBuilder = d3.line()
@@ -1219,6 +1339,7 @@
           selectedRouteKey === rKey ||
           (selectedAirportIcao && (r.origin === selectedAirportIcao || r.dest === selectedAirportIcao));
         const isDimmed = (selectedRouteKey || selectedAirportIcao) && !isHighlighted;
+        const routeColor = r.color || DEFAULT_ROUTE_COLOR;
 
         const segments = computeSplitFlightArcs(src, dst);
         segments.forEach((coords, idx) => {
@@ -1227,6 +1348,7 @@
             rKey,
             route: r,
             coords,
+            color: isHighlighted ? highlightColor : routeColor,
             isHighlighted,
             isDimmed
           });
@@ -1244,9 +1366,9 @@
 
       routeGroups.select("path.route-visible-path")
         .attr("d", (d) => lineBuilder(d.coords))
-        .attr("stroke", (d) => (d.isHighlighted ? highlightColor : baseColor))
-        .attr("stroke-width", (d) => (d.isHighlighted ? 2.8 : 1.6))
-        .attr("opacity", (d) => (d.isDimmed ? 0.2 : 0.92));
+        .attr("stroke", (d) => d.color)
+        .attr("stroke-width", (d) => (d.isHighlighted ? 2.9 : 1.7))
+        .attr("opacity", (d) => (d.isDimmed ? 0.18 : 0.92));
 
       routeGroups.select("path.route-hit-area")
         .attr("d", (d) => lineBuilder(d.coords))
@@ -1277,25 +1399,22 @@
         });
 
       nodeGroups.select("circle.outer-ring")
-        .attr("r", (d) => (d.icao === selectedAirportIcao ? 8 : d.isHub ? 6.5 : 3.8))
         .attr("fill", "#ffffff")
-        .attr("stroke", (d) => (d.icao === selectedAirportIcao ? highlightColor : baseColor))
-        .attr("stroke-width", (d) => (d.icao === selectedAirportIcao ? 3 : d.isHub ? 2.4 : 2));
+        .attr("stroke", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"));
 
       nodeGroups.select("circle.inner-dot")
-        .attr("r", (d) => (d.isHub || d.icao === selectedAirportIcao ? 2.4 : 0))
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : baseColor));
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"));
 
       nodeGroups.select("text.map-label-city")
-        .attr("y", (d) => (d.isHub ? 15 : 13))
         .attr("text-anchor", "middle")
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : baseColor))
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
-        .attr("y", (d) => (d.isHub ? 24 : 22))
         .attr("text-anchor", "middle")
         .text((d) => d.icao);
+
+      applyZoomScaledLabelStyles(currentZoomScale);
     }
 
     async function loadWorldAtlas() {
@@ -1313,7 +1432,7 @@
     window.addEventListener("resize", () => renderMap());
 
     // =========================================================================
-    // INSPECTOR PANEL (Click Airports & Routes for Destination Info)
+    // INSPECTOR PANEL
     // =========================================================================
     const inspectorCard = document.getElementById("inspector-card");
 
@@ -1355,15 +1474,19 @@
       `;
 
       document.getElementById("inspector-extra").textContent =
-        connected.length > 0 ? "Click a connected route below to inspect flight details:" : "No active routes connected to this airport.";
+        connected.length > 0 ? "Click a route below to inspect flight details:" : "No active routes connected to this airport.";
 
       document.getElementById("inspector-list").innerHTML = connected.map((r) => {
         const peerCode = r.origin === airport.icao ? r.dest : r.origin;
         const peer = airportMap.get(peerCode);
+        const acText = (r.aircraftTypes || []).join(", ");
         return `
           <div class="inspector-route-item" data-inspect-route="${r.origin}->${r.dest}">
-            <span><strong>${peer ? peer.city.toUpperCase() : peerCode}</strong> (${peerCode})</span>
-            <span style="color:var(--text-muted);">${r.aircraft} &bull; ${r.frequency}</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              <span class="route-swatch-dot" style="background:${r.color || DEFAULT_ROUTE_COLOR};"></span>
+              <strong>${peer ? peer.city.toUpperCase() : peerCode}</strong> (${peerCode})
+            </span>
+            <span style="color:var(--text-muted);text-align:right;">${acText}</span>
           </div>
         `;
       }).join("");
@@ -1380,6 +1503,7 @@
       const src = airportMap.get(route.origin);
       const dst = airportMap.get(route.dest);
       const distKm = src && dst ? calculateGreatCircleKm(src, dst) : 0;
+      const acText = (route.aircraftTypes || []).join(", ");
 
       document.getElementById("inspector-kicker").textContent = "Flight Route Details";
       document.getElementById("inspector-title").textContent =
@@ -1391,16 +1515,23 @@
           <div class="inspector-stat-val">${route.origin} &ndash; ${route.dest}</div>
         </div>
         <div class="inspector-stat">
-          <div class="inspector-stat-label">Aircraft Type</div>
-          <div class="inspector-stat-val">${route.aircraft}</div>
-        </div>
-        <div class="inspector-stat">
           <div class="inspector-stat-label">Frequency</div>
           <div class="inspector-stat-val">${route.frequency}</div>
+        </div>
+        <div class="inspector-stat" style="grid-column: span 2;">
+          <div class="inspector-stat-label">Aircraft Types</div>
+          <div class="inspector-stat-val">${acText}</div>
         </div>
         <div class="inspector-stat">
           <div class="inspector-stat-label">Great-Circle Distance</div>
           <div class="inspector-stat-val">${distKm.toLocaleString()} km</div>
+        </div>
+        <div class="inspector-stat">
+          <div class="inspector-stat-label">Assigned Color</div>
+          <div class="inspector-stat-val" style="display:flex;align-items:center;gap:6px;">
+            <span class="route-swatch-dot" style="background:${route.color || DEFAULT_ROUTE_COLOR};"></span>
+            ${route.color || DEFAULT_ROUTE_COLOR}
+          </div>
         </div>
       `;
 
@@ -1435,19 +1566,93 @@
     });
 
     // =========================================================================
-    // FILTERS, COLOR CUSTOMIZATION, AUTH & NETWORK EDITOR
+    // TOGGLEABLE MULTI-AIRCRAFT FILTER POPOVER
     // =========================================================================
-    colorPicker.addEventListener("input", (e) => {
-      applyRouteThemeColor(e.target.value);
+    const aircraftToggleBtn = document.getElementById("aircraft-toggle-btn");
+    const aircraftPopover = document.getElementById("aircraft-popover");
+    const aircraftCheckboxList = document.getElementById("aircraft-checkbox-list");
+
+    aircraftToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = aircraftPopover.classList.toggle("open");
+      aircraftToggleBtn.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".multi-filter-wrap")) {
+        aircraftPopover.classList.remove("open");
+        aircraftToggleBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    function updateAircraftButtonLabel() {
+      if (selectedAircraftSet.size === 0) {
+        aircraftToggleBtn.textContent = "Aircraft: All";
+      } else if (selectedAircraftSet.size === 1) {
+        aircraftToggleBtn.textContent = `Aircraft: ${[...selectedAircraftSet][0]}`;
+      } else {
+        aircraftToggleBtn.textContent = `Aircraft (${selectedAircraftSet.size})`;
+      }
+    }
+
+    function renderAircraftToggleList(allTypes) {
+      const availableSet = new Set(allTypes);
+      for (const ac of [...selectedAircraftSet]) {
+        if (!availableSet.has(ac)) selectedAircraftSet.delete(ac);
+      }
+      updateAircraftButtonLabel();
+
+      if (!allTypes.length) {
+        aircraftCheckboxList.innerHTML = `<div class="hint-text" style="padding:6px 8px;">No aircraft types yet</div>`;
+        return;
+      }
+
+      aircraftCheckboxList.innerHTML = allTypes.map((ac) => {
+        const checked = selectedAircraftSet.has(ac) ? "checked" : "";
+        return `
+          <label class="multi-filter-item">
+            <input type="checkbox" value="${ac}" ${checked} />
+            <span>${ac}</span>
+          </label>
+        `;
+      }).join("");
+    }
+
+    aircraftCheckboxList.addEventListener("change", (e) => {
+      const cb = e.target.closest("input[type='checkbox']");
+      if (!cb) return;
+      if (cb.checked) {
+        selectedAircraftSet.add(cb.value);
+      } else {
+        selectedAircraftSet.delete(cb.value);
+      }
+      updateAircraftButtonLabel();
       renderMap();
     });
 
-    ["filter-hub", "filter-continent", "filter-aircraft"].forEach((id) => {
+    document.getElementById("ac-select-all").addEventListener("click", () => {
+      const allTypes = [...new Set(networkData.routes.flatMap((r) => r.aircraftTypes || []))];
+      selectedAircraftSet = new Set(allTypes);
+      renderAircraftToggleList(allTypes);
+      renderMap();
+    });
+
+    document.getElementById("ac-clear-all").addEventListener("click", () => {
+      selectedAircraftSet.clear();
+      const allTypes = [...new Set(networkData.routes.flatMap((r) => r.aircraftTypes || []))];
+      renderAircraftToggleList(allTypes);
+      renderMap();
+    });
+
+    ["filter-hub", "filter-continent"].forEach((id) => {
       document.getElementById(id).addEventListener("change", () => {
         renderMap();
       });
     });
 
+    // =========================================================================
+    // AUTH & NETWORK EDITOR
+    // =========================================================================
     const authModal = document.getElementById("auth-modal");
     const editorModal = document.getElementById("editor-modal");
     const authError = document.getElementById("auth-error");
@@ -1517,9 +1722,8 @@
 
     function renderControlsAndTables() {
       const hubs = networkData.airports.filter((a) => a.isHub);
-      const aircraftTypes = [...new Set(networkData.routes.map((r) => r.aircraft).filter(Boolean))].sort();
+      const allAircraftTypes = [...new Set(networkData.routes.flatMap((r) => r.aircraftTypes || []).filter(Boolean))].sort();
 
-      // Summary & empty banner
       document.getElementById("network-summary").textContent =
         `${hubs.length} hub${hubs.length === 1 ? "" : "s"} • ${networkData.airports.length} airports • ${networkData.routes.length} routes`;
 
@@ -1530,21 +1734,14 @@
         emptyBanner.classList.remove("visible");
       }
 
-      // Hub filter dropdown
       const hubSel = document.getElementById("filter-hub");
       const prevHub = hubSel.value;
       hubSel.innerHTML = `<option value="ALL">All Hubs (${hubs.length})</option>` +
         hubs.map((h) => `<option value="${h.icao}">${h.city.toUpperCase()} (${h.icao})</option>`).join("");
       if ([...hubSel.options].some((o) => o.value === prevHub)) hubSel.value = prevHub;
 
-      // Aircraft filter dropdown
-      const acSel = document.getElementById("filter-aircraft");
-      const prevAc = acSel.value;
-      acSel.innerHTML = `<option value="ALL">All Aircraft (${aircraftTypes.length})</option>` +
-        aircraftTypes.map((ac) => `<option value="${ac}">${ac}</option>`).join("");
-      if ([...acSel.options].some((o) => o.value === prevAc)) acSel.value = prevAc;
+      renderAircraftToggleList(allAircraftTypes);
 
-      // Editor route origin/dest dropdowns
       const sortedAirports = [...networkData.airports].sort((a, b) => a.city.localeCompare(b.city));
       const apOptions = sortedAirports.length
         ? sortedAirports.map((a) => `<option value="${a.icao}">${a.city.toUpperCase()} (${a.icao})</option>`).join("")
@@ -1556,7 +1753,6 @@
       destSel.innerHTML = apOptions;
       if (sortedAirports.length > 1) destSel.selectedIndex = 1;
 
-      // Editor Airports table
       const airportsBody = document.getElementById("airports-table-body");
       airportsBody.innerHTML = sortedAirports.length
         ? sortedAirports.map((a) => `
@@ -1574,18 +1770,20 @@
         `).join("")
         : `<tr><td colspan="6" class="hint-text" style="text-align:center;padding:14px;">No airports in Firebase yet. Add your first airport above.</td></tr>`;
 
-      // Editor Routes table
       const airportMap = new Map(networkData.airports.map((a) => [a.icao, a]));
       const routesBody = document.getElementById("routes-table-body");
       routesBody.innerHTML = networkData.routes.length
         ? networkData.routes.map((r, idx) => {
           const o = airportMap.get(r.origin);
           const d = airportMap.get(r.dest);
+          const rColor = r.color || DEFAULT_ROUTE_COLOR;
+          const chips = (r.aircraftTypes || []).map((ac) => `<span class="ac-chip">${ac}</span>`).join("");
           return `
             <tr>
+              <td><span class="route-swatch-dot" style="background:${rColor};" title="${rColor}"></span></td>
               <td><strong>${o ? o.city.toUpperCase() : r.origin}</strong> (${r.origin})</td>
               <td><strong>${d ? d.city.toUpperCase() : r.dest}</strong> (${r.dest})</td>
-              <td>${r.aircraft}</td>
+              <td>${chips}</td>
               <td>${r.frequency}</td>
               <td style="text-align:right;white-space:nowrap;">
                 <button type="button" class="btn btn-sm" data-edit-route="${idx}">Edit</button>
@@ -1594,7 +1792,7 @@
             </tr>
           `;
         }).join("")
-        : `<tr><td colspan="5" class="hint-text" style="text-align:center;padding:14px;">No routes in Firebase yet. Add airports above, then create routes here.</td></tr>`;
+        : `<tr><td colspan="6" class="hint-text" style="text-align:center;padding:14px;">No routes in Firebase yet. Add airports above, then create routes here.</td></tr>`;
     }
 
     function renderAll() {
@@ -1602,7 +1800,6 @@
       renderMap();
     }
 
-    // Add / Update Airport
     document.getElementById("add-airport-form").addEventListener("submit", (e) => {
       e.preventDefault();
       editorError.textContent = "";
@@ -1634,7 +1831,6 @@
       renderAll();
     });
 
-    // Edit or Remove Airport from Table
     document.getElementById("airports-table-body").addEventListener("click", (e) => {
       const editIcao = e.target.getAttribute("data-edit-airport");
       if (editIcao) {
@@ -1659,14 +1855,14 @@
       }
     });
 
-    // Add / Update Route
     document.getElementById("add-route-form").addEventListener("submit", (e) => {
       e.preventDefault();
       editorError.textContent = "";
       const origin = document.getElementById("route-origin").value;
       const dest = document.getElementById("route-dest").value;
-      const aircraft = document.getElementById("route-aircraft").value.trim() || "A320neo";
+      const aircraftTypes = parseAircraftList(document.getElementById("route-aircraft").value);
       const frequency = document.getElementById("route-freq").value.trim() || "Daily";
+      const color = document.getElementById("route-color").value || DEFAULT_ROUTE_COLOR;
 
       if (!origin || !dest) {
         editorError.textContent = "Please add at least two airports before creating a route.";
@@ -1676,9 +1872,13 @@
         editorError.textContent = "Origin and destination airports must be different.";
         return;
       }
+      if (!aircraftTypes.length) {
+        editorError.textContent = "Please specify at least one aircraft type.";
+        return;
+      }
 
       const existingIdx = networkData.routes.findIndex((r) => r.origin === origin && r.dest === dest);
-      const entry = { origin, dest, aircraft, frequency };
+      const entry = { origin, dest, aircraftTypes, frequency, color };
       if (existingIdx >= 0) {
         networkData.routes[existingIdx] = entry;
       } else {
@@ -1688,7 +1888,6 @@
       renderAll();
     });
 
-    // Edit or Delete Route from Table
     document.getElementById("routes-table-body").addEventListener("click", (e) => {
       const editIdx = e.target.getAttribute("data-edit-route");
       if (editIdx !== null) {
@@ -1696,8 +1895,9 @@
         if (r) {
           document.getElementById("route-origin").value = r.origin;
           document.getElementById("route-dest").value = r.dest;
-          document.getElementById("route-aircraft").value = r.aircraft;
+          document.getElementById("route-aircraft").value = (r.aircraftTypes || []).join(", ");
           document.getElementById("route-freq").value = r.frequency;
+          document.getElementById("route-color").value = r.color || DEFAULT_ROUTE_COLOR;
         }
         return;
       }
@@ -1710,7 +1910,6 @@
       }
     });
 
-    // Publish Changes to Firebase
     document.getElementById("save-network-btn").addEventListener("click", async () => {
       editorError.textContent = "";
       const btn = document.getElementById("save-network-btn");
@@ -1726,7 +1925,6 @@
       }
     });
 
-    // Export JSON Backup
     document.getElementById("export-json-btn").addEventListener("click", () => {
       const blob = new Blob([JSON.stringify(networkData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
