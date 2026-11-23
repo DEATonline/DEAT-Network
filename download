@@ -1,4 +1,4 @@
-# Local environment & private credentials (NEVER commit service account keys)
+# Never commit environment files or private service account credentials
 .env
 .env.*
 *service-account*.json
