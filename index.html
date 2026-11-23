@@ -1723,9 +1723,64 @@
   <div id="toast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     const STORAGE_KEY = "deat_online_network_v3";
     const SESSION_AUTH_KEY = "deat_editor_unlocked_v3";
+
+    // Replace these placeholder values with your Firebase Web App configuration
+    const FIREBASE_CONFIG = {
+      apiKey: "YOUR_FIREBASE_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const FIRESTORE_COLLECTION = "networkState";
+    const FIRESTORE_DOC_ID = "default";
+
+    let firestoreDb = null;
+    let firebaseReady = false;
+
+    function isFirebaseConfigured() {
+      return Boolean(
+        FIREBASE_CONFIG &&
+        FIREBASE_CONFIG.apiKey &&
+        !FIREBASE_CONFIG.apiKey.startsWith("YOUR_") &&
+        FIREBASE_CONFIG.projectId &&
+        !FIREBASE_CONFIG.projectId.startsWith("YOUR_")
+      );
+    }
+
+    function initFirebaseBackend() {
+      if (!isFirebaseConfigured()) {
+        firebaseReady = false;
+        return false;
+      }
+      try {
+        const app = initializeApp(FIREBASE_CONFIG);
+        firestoreDb = getFirestore(app);
+        firebaseReady = true;
+        return true;
+      } catch (err) {
+        console.warn("Firebase initialization failed, falling back to local storage:", err);
+        firebaseReady = false;
+        return false;
+      }
+    }
+
+    function normalizeLoadedPayload(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const payload = raw.payload && typeof raw.payload === "object" ? raw.payload : raw;
+      if (Array.isArray(payload.airports) && Array.isArray(payload.routes)) {
+        return payload;
+      }
+      return null;
+    }
 
     const DEFAULT_NETWORK_DATA = {
       security: {
@@ -1963,11 +2018,34 @@
 
     /* ================= DATA STORAGE ================= */
     async function loadInitialData() {
+      initFirebaseBackend();
+
+      if (firebaseReady && firestoreDb) {
+        try {
+          const snap = await getDoc(doc(firestoreDb, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID));
+          if (snap.exists()) {
+            const remoteData = normalizeLoadedPayload(snap.data());
+            if (remoteData) {
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteData));
+              } catch (_) {}
+              const statusEl = document.getElementById("footer-storage-status");
+              if (statusEl) statusEl.textContent = "SYNCED (FIREBASE)";
+              return remoteData;
+            }
+          }
+        } catch (err) {
+          console.warn("Firestore read failed, falling back to local storage:", err);
+        }
+      }
+
       try {
         const savedRaw = localStorage.getItem(STORAGE_KEY);
         if (savedRaw) {
-          const parsed = JSON.parse(savedRaw);
-          if (parsed && Array.isArray(parsed.airports) && Array.isArray(parsed.routes)) {
+          const parsed = normalizeLoadedPayload(JSON.parse(savedRaw));
+          if (parsed) {
+            const statusEl = document.getElementById("footer-storage-status");
+            if (statusEl) statusEl.textContent = firebaseReady ? "LOCAL CACHE" : "LOCAL ONLY";
             return parsed;
           }
         }
@@ -1980,8 +2058,8 @@
         try {
           const res = await fetch("./data/network.json", { cache: "no-store" });
           if (res.ok) {
-            const ext = await res.json();
-            if (ext && Array.isArray(ext.airports) && Array.isArray(ext.routes)) {
+            const ext = normalizeLoadedPayload(await res.json());
+            if (ext) {
               return ext;
             }
           }
@@ -1993,14 +2071,33 @@
       return JSON.parse(JSON.stringify(DEFAULT_NETWORK_DATA));
     }
 
-    function saveNetworkData() {
+    async function saveNetworkData() {
+      const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(networkData));
-        document.getElementById("footer-storage-status").textContent =
-          "SAVED " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       } catch (e) {
         showToast("Could not write to browser storage.");
       }
+
+      const statusEl = document.getElementById("footer-storage-status");
+
+      if (firebaseReady && firestoreDb) {
+        try {
+          await setDoc(doc(firestoreDb, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID), {
+            payload: networkData,
+            updatedAt: new Date().toISOString()
+          });
+          if (statusEl) statusEl.textContent = `SAVED TO FIREBASE ${timeStr}`;
+          return;
+        } catch (err) {
+          console.warn("Firestore write failed, kept in localStorage:", err);
+          if (statusEl) statusEl.textContent = `LOCAL ONLY (FIREBASE ERR) ${timeStr}`;
+          showToast("Saved locally; Firebase sync failed.");
+          return;
+        }
+      }
+
+      if (statusEl) statusEl.textContent = `SAVED LOCALLY ${timeStr}`;
     }
 
     function showToast(msg) {
@@ -3489,8 +3586,8 @@
       document.getElementById("btn-reset-sample").onclick = () => {
         requireUnlocked(async () => {
           localStorage.removeItem(STORAGE_KEY);
-          networkData = await loadInitialData();
-          saveNetworkData();
+          networkData = JSON.parse(JSON.stringify(DEFAULT_NETWORK_DATA));
+          await saveNetworkData();
           applyBrandTheme();
           populateEditorDropdowns();
           rebuildFilterUI();
