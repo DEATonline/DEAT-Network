@@ -9,7 +9,1257 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700;1,800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="./styles.css" />
+
+  <style>
+    :root {
+      --deat-red: #EE1C25;
+      --deat-red-dark: #C2121A;
+      --deat-red-soft: rgba(238, 28, 37, 0.08);
+      --deat-charcoal: #232528;
+      --deat-slate: #4B5056;
+      --deat-muted: #7C828A;
+      --deat-border: #DCDFE3;
+      --deat-bg: #F4F5F7;
+      --deat-land: #D6D8DC;
+      --deat-land-stroke: #FFFFFF;
+      --deat-water: #FFFFFF;
+      --deat-surface: rgba(255, 255, 255, 0.97);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+      --header-h: 54px;
+      --footer-h: 36px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      color: var(--deat-charcoal);
+      background: var(--deat-water);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ================= TOP HEADER ================= */
+    #top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--deat-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+      padding-right: 14px;
+      gap: 10px;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      gap: 12px;
+      min-width: 0;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-box {
+      background: var(--deat-red);
+      height: 100%;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #FFFFFF;
+      user-select: none;
+    }
+
+    .brand-wordmark {
+      font-weight: 800;
+      font-style: italic;
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+
+    .network-title-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .network-title {
+      font-size: 13px;
+      font-weight: 600;
+      font-style: italic;
+      color: var(--deat-slate);
+      white-space: nowrap;
+    }
+
+    .network-subtitle {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--deat-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-left: 1px solid var(--deat-border);
+      border-right: 1px solid var(--deat-border);
+      padding: 0 16px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--deat-charcoal);
+      line-height: 1.1;
+    }
+
+    .stat-val.accent {
+      color: var(--deat-red);
+    }
+
+    .stat-lbl {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--deat-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .search-container {
+      position: relative;
+      width: 210px;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 32px;
+      border: 1px solid var(--deat-border);
+      background: var(--deat-bg);
+      padding: 0 26px 0 9px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--deat-charcoal);
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .search-input:focus {
+      background: #FFFFFF;
+      border-color: var(--deat-red);
+    }
+
+    .search-shortcut {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--deat-muted);
+      pointer-events: none;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 36px;
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      border: 1px solid var(--deat-charcoal);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      z-index: 1200;
+    }
+
+    .search-results.open {
+      display: block;
+    }
+
+    .search-result-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--deat-border);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover {
+      background: var(--deat-red-soft);
+    }
+
+    .sr-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sr-city {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--deat-charcoal);
+    }
+
+    .sr-name {
+      font-size: 10px;
+      color: var(--deat-muted);
+    }
+
+    .sr-icao {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--deat-red);
+      background: var(--deat-red-soft);
+      padding: 2px 5px;
+    }
+
+    .btn {
+      height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--deat-border);
+      background: #FFFFFF;
+      color: var(--deat-charcoal);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      border-color: var(--deat-charcoal);
+      background: var(--deat-bg);
+    }
+
+    .btn.active {
+      background: var(--deat-charcoal);
+      color: #FFFFFF;
+      border-color: var(--deat-charcoal);
+    }
+
+    .btn-primary {
+      background: var(--deat-red);
+      border-color: var(--deat-red);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: var(--deat-red-dark);
+      border-color: var(--deat-red-dark);
+    }
+
+    .btn-unlocked {
+      background: #14532D;
+      border-color: #14532D;
+      color: #FFFFFF;
+    }
+
+    .btn-unlocked:hover {
+      background: #166534;
+    }
+
+    .btn-sm {
+      height: 28px;
+      padding: 0 9px;
+      font-size: 11px;
+    }
+
+    .btn-danger {
+      color: var(--deat-red);
+      border-color: rgba(238, 28, 37, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: var(--deat-red);
+      color: #FFFFFF;
+      border-color: var(--deat-red);
+    }
+
+    /* ================= MAP CANVAS ================= */
+    #map-wrapper {
+      position: fixed;
+      top: var(--header-h);
+      bottom: var(--footer-h);
+      left: 0;
+      right: 0;
+      background: #FFFFFF;
+      z-index: 1;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #FFFFFF;
+    }
+
+    .leaflet-container {
+      background: #FFFFFF !important;
+      font-family: var(--font-sans) !important;
+      outline: none;
+    }
+
+    .leaflet-overlay-pane svg {
+      overflow: visible !important;
+    }
+
+    .leaflet-control-attribution {
+      font-size: 9px !important;
+      background: rgba(255, 255, 255, 0.85) !important;
+      color: var(--deat-muted) !important;
+    }
+
+    .leaflet-control-zoom {
+      border: 1px solid var(--deat-border) !important;
+      border-radius: 0 !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important;
+      margin-bottom: 12px !important;
+      margin-right: 14px !important;
+    }
+
+    .leaflet-control-zoom a {
+      border-radius: 0 !important;
+      color: var(--deat-charcoal) !important;
+      width: 30px !important;
+      height: 30px !important;
+      line-height: 28px !important;
+      font-weight: 500 !important;
+      background: #FFFFFF !important;
+      border-bottom: 1px solid var(--deat-border) !important;
+    }
+
+    .leaflet-control-zoom a:hover {
+      background: var(--deat-bg) !important;
+      color: var(--deat-red) !important;
+    }
+
+    /* Airport Markers */
+    .deat-airport-marker {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    .airport-pin-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 120px;
+      margin-left: -60px;
+      margin-top: -8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .airport-ring {
+      position: relative;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 2.5px solid var(--deat-red);
+      box-shadow: 0 0 0 1.5px #FFFFFF;
+      transition: transform 0.14s ease, background 0.14s ease;
+      flex-shrink: 0;
+    }
+
+    .airport-pin-wrap.hub .airport-ring {
+      width: 15px;
+      height: 15px;
+      border-width: 3px;
+      margin-top: -2px;
+      box-shadow: 0 0 0 2px #FFFFFF, 0 2px 6px rgba(238, 28, 37, 0.3);
+    }
+
+    .airport-pin-wrap.hub .airport-ring::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      background: var(--deat-red);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .airport-pin-wrap:hover .airport-ring,
+    .airport-pin-wrap.selected .airport-ring {
+      transform: scale(1.3);
+      background: var(--deat-red);
+      border-color: #FFFFFF;
+      box-shadow: 0 0 0 2px var(--deat-red);
+    }
+
+    .airport-pin-wrap.dimmed {
+      opacity: 0.24;
+    }
+
+    .airport-label {
+      margin-top: 3px;
+      text-align: center;
+      pointer-events: none;
+      white-space: nowrap;
+      line-height: 1.08;
+      text-shadow:
+        -1px -1px 0 #FFFFFF,
+         1px -1px 0 #FFFFFF,
+        -1px  1px 0 #FFFFFF,
+         1px  1px 0 #FFFFFF,
+         0px  0px 4px rgba(255, 255, 255, 0.96);
+    }
+
+    .airport-label-city {
+      font-size: 11px;
+      font-weight: 700;
+      font-style: italic;
+      color: var(--deat-red);
+      letter-spacing: -0.01em;
+    }
+
+    .airport-label-icao {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--deat-charcoal);
+      letter-spacing: 0.03em;
+    }
+
+    .airport-pin-wrap.hub .airport-label-city {
+      font-size: 12px;
+    }
+
+    .airport-pin-wrap.selected .airport-label-city {
+      background: var(--deat-red);
+      color: #FFFFFF;
+      padding: 1px 5px;
+      text-shadow: none;
+    }
+
+    .airport-pin-wrap.selected .airport-label-icao {
+      background: var(--deat-charcoal);
+      color: #FFFFFF;
+      padding: 0 4px;
+      text-shadow: none;
+    }
+
+    /* ================= LEFT FILTER DOCK ================= */
+    #filter-panel {
+      position: fixed;
+      top: calc(var(--header-h) + 12px);
+      left: 14px;
+      width: 268px;
+      max-height: calc(100vh - var(--header-h) - var(--footer-h) - 115px);
+      background: var(--deat-surface);
+      border: 1px solid var(--deat-border);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    #filter-panel.collapsed {
+      transform: translateX(-290px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .panel-header {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--deat-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+    }
+
+    .panel-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--deat-charcoal);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-title-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--deat-red);
+      display: inline-block;
+    }
+
+    .panel-body {
+      padding: 11px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--deat-slate);
+    }
+
+    .filter-clear-link {
+      font-size: 10px;
+      color: var(--deat-red);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-weight: 600;
+    }
+
+    .filter-clear-link:hover {
+      text-decoration: underline;
+    }
+
+    .chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .filter-chip {
+      font-size: 10.5px;
+      padding: 3.5px 7px;
+      border: 1px solid var(--deat-border);
+      background: #FFFFFF;
+      color: var(--deat-slate);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.12s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .filter-chip:hover {
+      border-color: var(--deat-charcoal);
+    }
+
+    .filter-chip.active {
+      background: var(--deat-red);
+      border-color: var(--deat-red);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    .chip-swatch {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .filter-select {
+      width: 100%;
+      height: 30px;
+      border: 1px solid var(--deat-border);
+      background: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      color: var(--deat-charcoal);
+      padding: 0 8px;
+      outline: none;
+    }
+
+    .filter-select:focus {
+      border-color: var(--deat-red);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--deat-charcoal);
+      padding: 2px 0;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--deat-red);
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ================= LEGEND WIDGET ================= */
+    #legend-widget {
+      position: fixed;
+      bottom: calc(var(--footer-h) + 12px);
+      left: 14px;
+      background: var(--deat-surface);
+      border: 1px solid var(--deat-border);
+      padding: 8px 11px;
+      z-index: 850;
+      max-width: 340px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .legend-title {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--deat-muted);
+      margin-bottom: 5px;
+    }
+
+    .legend-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 11px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--deat-charcoal);
+    }
+
+    .legend-line {
+      width: 13px;
+      height: 2.5px;
+      display: inline-block;
+    }
+
+    .legend-hub-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 2.5px solid var(--deat-red);
+      background: #FFFFFF;
+      display: inline-block;
+    }
+
+    /* ================= RIGHT INSPECTOR PANEL ================= */
+    #inspector-panel {
+      position: fixed;
+      top: calc(var(--header-h) + 12px);
+      right: 14px;
+      width: 336px;
+      max-height: calc(100vh - var(--header-h) - var(--footer-h) - 24px);
+      background: #FFFFFF;
+      border: 1px solid var(--deat-charcoal);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+      z-index: 950;
+      display: none;
+      flex-direction: column;
+    }
+
+    #inspector-panel.open {
+      display: flex;
+    }
+
+    .inspector-hero {
+      background: var(--deat-charcoal);
+      color: #FFFFFF;
+      padding: 13px 14px 11px;
+      position: relative;
+    }
+
+    .inspector-hero.hub-hero {
+      border-top: 3px solid var(--deat-red);
+    }
+
+    .inspector-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.14);
+      border: none;
+      color: #FFFFFF;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .inspector-close:hover {
+      background: var(--deat-red);
+    }
+
+    .inspector-kicker {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #A6ACB3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .hub-badge {
+      background: var(--deat-red);
+      color: #FFFFFF;
+      padding: 1px 5px;
+      font-weight: 700;
+      font-size: 9px;
+    }
+
+    .inspector-code {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+    }
+
+    .inspector-title {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #E2E5E9;
+      margin-top: 2px;
+    }
+
+    .inspector-sub {
+      font-size: 11px;
+      color: #9DA3AA;
+      margin-top: 2px;
+    }
+
+    .inspector-body {
+      padding: 12px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      background: var(--deat-bg);
+      padding: 8px;
+      border: 1px solid var(--deat-border);
+    }
+
+    .meta-cell-lbl {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--deat-muted);
+      font-weight: 600;
+    }
+
+    .meta-cell-val {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--deat-charcoal);
+      margin-top: 1px;
+    }
+
+    .section-subhead {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--deat-slate);
+      border-bottom: 1px solid var(--deat-border);
+      padding-bottom: 4px;
+    }
+
+    .connected-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .connected-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      border: 1px solid var(--deat-border);
+      background: #FFFFFF;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+
+    .connected-item:hover {
+      border-color: var(--deat-red);
+      background: var(--deat-red-soft);
+    }
+
+    .ci-main {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ci-city {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--deat-charcoal);
+    }
+
+    .ci-meta {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--deat-muted);
+    }
+
+    .ci-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .ci-aircraft {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 600;
+      background: var(--deat-bg);
+      padding: 1px 5px;
+      color: var(--deat-charcoal);
+    }
+
+    /* ================= MODALS & NETWORK EDITOR (OVERLAP-FREE) ================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(23, 25, 28, 0.6);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    #auth-modal {
+      z-index: 2500;
+    }
+
+    .auth-card {
+      width: 420px;
+      max-width: 100%;
+      background: #FFFFFF;
+      border: 1px solid var(--deat-charcoal);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+      overflow: hidden;
+    }
+
+    .auth-header {
+      background: var(--deat-charcoal);
+      color: #FFFFFF;
+      padding: 14px 18px;
+      border-bottom: 3px solid var(--deat-red);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .auth-header h2 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .auth-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .auth-error {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      color: #B91C1C;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .auth-error.show {
+      display: block;
+    }
+
+    .editor-dialog {
+      width: 1040px;
+      max-width: 100%;
+      max-height: 88vh;
+      background: #FFFFFF;
+      border: 1px solid var(--deat-charcoal);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-topbar {
+      background: var(--deat-charcoal);
+      color: #FFFFFF;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid var(--deat-red);
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .editor-topbar h2 {
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .editor-tabs {
+      display: flex;
+      background: var(--deat-bg);
+      border-bottom: 1px solid var(--deat-border);
+      padding: 0 18px;
+      gap: 4px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .editor-tab {
+      padding: 10px 14px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--deat-slate);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .editor-tab.active {
+      color: var(--deat-red);
+      border-bottom-color: var(--deat-red);
+      background: #FFFFFF;
+    }
+
+    .editor-content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    .editor-pane {
+      display: none;
+    }
+
+    .editor-pane.active {
+      display: block;
+    }
+
+    .editor-split {
+      display: grid;
+      grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .form-box {
+      background: var(--deat-bg);
+      border: 1px solid var(--deat-border);
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .form-box h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--deat-charcoal);
+      border-bottom: 1px solid var(--deat-border);
+      padding-bottom: 7px;
+      margin-bottom: 2px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .field label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--deat-slate);
+      line-height: 1.25;
+      display: block;
+    }
+
+    .field input[type="text"],
+    .field input[type="number"],
+    .field input[type="password"],
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-width: 0;
+      height: 34px;
+      border: 1px solid var(--deat-border);
+      background: #FFFFFF;
+      padding: 6px 9px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      color: var(--deat-charcoal);
+      outline: none;
+      display: block;
+      position: relative;
+      z-index: 1;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--deat-red);
+      z-index: 2;
+    }
+
+    .field input[type="color"] {
+      padding: 2px;
+      height: 34px;
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--deat-border);
+      background: #FFFFFF;
+      cursor: pointer;
+      display: block;
+    }
+
+    .table-column {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .table-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .data-table-wrap {
+      border: 1px solid var(--deat-border);
+      overflow: auto;
+      max-height: 56vh;
+      background: #FFFFFF;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+
+    table.data-table th {
+      position: sticky;
+      top: 0;
+      background: var(--deat-bg);
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--deat-slate);
+      border-bottom: 1px solid var(--deat-border);
+      z-index: 2;
+    }
+
+    table.data-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--deat-border);
+      vertical-align: middle;
+    }
+
+    table.data-table tr:hover td {
+      background: #FAFAFB;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+    }
+
+    /* ================= BOTTOM BAR ================= */
+    #bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--footer-h);
+      background: var(--deat-red);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      z-index: 1000;
+      font-size: 11px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 800;
+      font-style: italic;
+      letter-spacing: 0.04em;
+      font-size: 14px;
+    }
+
+    .footer-meta {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      opacity: 0.94;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: calc(var(--footer-h) + 14px);
+      right: 14px;
+      background: var(--deat-charcoal);
+      color: #FFFFFF;
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      border-left: 3px solid var(--deat-red);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      z-index: 3000;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: all 0.2s ease;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 1180px) {
+      .header-stats {
+        display: none;
+      }
+      .editor-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .network-title-wrap {
+        display: none;
+      }
+      .search-container {
+        width: 145px;
+      }
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+      #filter-panel, #inspector-panel {
+        width: calc(100vw - 28px);
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -17,7 +1267,10 @@
   <header id="top-bar">
     <div class="brand-block">
       <div class="brand-logo-box">
-        <img src="./assets/deat-emblem.svg" alt="DEAT" width="26" height="22" />
+        <svg width="24" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="DEAT Emblem">
+          <circle cx="54" cy="52" r="27" stroke="#FFFFFF" stroke-width="8.5" />
+          <path d="M14 14C28 33 52 44 88 47C63 54 47 67 34 86C40 65 34 45 14 14Z" fill="#FFFFFF" />
+        </svg>
         <span class="brand-wordmark">DEAT</span>
       </div>
       <div class="network-title-wrap">
@@ -132,24 +1385,21 @@
     <div class="inspector-body" id="inspector-body"></div>
   </aside>
 
-  <!-- PASSWORD UNLOCK MODAL -->
-  <div id="auth-modal" class="modal-backdrop">
+  <!-- PASSWORD UNLOCK MODAL (NO DEFAULT PASSWORD MENTIONED) -->
+  <div id="auth-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
     <div class="auth-card">
       <div class="auth-header">
-        <h2>Protected Editing Access</h2>
-        <button class="btn btn-sm" id="btn-close-auth">&times;</button>
+        <h2 id="auth-modal-title">Protected Editing Access</h2>
+        <button class="btn btn-sm" id="btn-close-auth" type="button">&times;</button>
       </div>
       <form id="form-password-unlock" class="auth-body">
-        <p style="font-size:12px;color:var(--deat-slate);line-height:1.45;">
-          Route, airport, fleet, and branding edits are password-protected. Enter the editor password to unlock editing controls for this browser session.
+        <p style="font-size:12px;color:var(--deat-slate);line-height:1.5;">
+          Editing routes, airports, fleet types, and network settings is restricted. Enter your editor password to unlock management controls for this session.
         </p>
         <div class="auth-error" id="auth-error"></div>
         <div class="field">
           <label for="auth-password-input">Editor Password</label>
-          <input type="password" id="auth-password-input" placeholder="Enter password..." required autocomplete="current-password" />
-        </div>
-        <div style="font-size:10.5px;color:var(--deat-muted);">
-          Default initial password: <code class="mono">DEAT-Admin-2026!</code>
+          <input type="password" id="auth-password-input" placeholder="Enter editor password" required autocomplete="current-password" />
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
           <button type="button" class="btn" id="btn-cancel-auth">Cancel</button>
@@ -160,37 +1410,47 @@
   </div>
 
   <!-- PASSWORD-PROTECTED NETWORK EDITOR MODAL -->
-  <div id="editor-modal" class="modal-backdrop">
+  <div id="editor-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="Network Editor">
     <div class="editor-dialog">
       <div class="editor-topbar">
-        <h2>DEAT Route Network Studio (Unlocked)</h2>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-sm" id="btn-lock-session">Lock Editing</button>
-          <button class="btn btn-sm btn-primary" id="btn-close-editor">Done</button>
+        <h2>DEAT Route Network Studio</h2>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button class="btn btn-sm" id="btn-lock-session" type="button">Lock Editing</button>
+          <button class="btn btn-sm btn-primary" id="btn-close-editor" type="button">Done</button>
         </div>
       </div>
 
       <div class="editor-tabs">
-        <button class="editor-tab active" data-tab="routes">Routes (<span id="tab-count-routes">0</span>)</button>
-        <button class="editor-tab" data-tab="airports">Airports (<span id="tab-count-airports">0</span>)</button>
-        <button class="editor-tab" data-tab="aircraft">Fleet (<span id="tab-count-aircraft">0</span>)</button>
-        <button class="editor-tab" data-tab="data">Backup, Security &amp; Brand</button>
+        <button class="editor-tab active" data-tab="routes" type="button">Routes (<span id="tab-count-routes">0</span>)</button>
+        <button class="editor-tab" data-tab="airports" type="button">Airports (<span id="tab-count-airports">0</span>)</button>
+        <button class="editor-tab" data-tab="aircraft" type="button">Fleet (<span id="tab-count-aircraft">0</span>)</button>
+        <button class="editor-tab" data-tab="data" type="button">Backup, Security &amp; Brand</button>
       </div>
 
       <div class="editor-content">
+        <!-- TAB 1: ROUTES -->
         <div class="editor-pane active" id="pane-routes">
           <div class="editor-split">
             <form class="form-box" id="form-route">
               <h3 id="form-route-title">Add New Flight Route</h3>
               <input type="hidden" id="edit-route-id" />
               <div class="field-row">
-                <div class="field"><label>Origin (ICAO)</label><select id="route-origin" required></select></div>
-                <div class="field"><label>Destination (ICAO)</label><select id="route-dest" required></select></div>
+                <div class="field">
+                  <label for="route-origin">Origin (ICAO)</label>
+                  <select id="route-origin" required></select>
+                </div>
+                <div class="field">
+                  <label for="route-dest">Destination (ICAO)</label>
+                  <select id="route-dest" required></select>
+                </div>
               </div>
               <div class="field-row">
-                <div class="field"><label>Aircraft</label><select id="route-aircraft" required></select></div>
                 <div class="field">
-                  <label>Category</label>
+                  <label for="route-aircraft">Aircraft</label>
+                  <select id="route-aircraft" required></select>
+                </div>
+                <div class="field">
+                  <label for="route-category">Category</label>
                   <select id="route-category">
                     <option value="Long-Haul">Long-Haul</option>
                     <option value="Medium-Haul">Medium-Haul</option>
@@ -201,9 +1461,12 @@
                 </div>
               </div>
               <div class="field-row">
-                <div class="field"><label>Color</label><input type="color" id="route-color" value="#EE1C25" /></div>
                 <div class="field">
-                  <label>Status</label>
+                  <label for="route-color">Color</label>
+                  <input type="color" id="route-color" value="#EE1C25" />
+                </div>
+                <div class="field">
+                  <label for="route-status">Status</label>
                   <select id="route-status">
                     <option value="Active">Active</option>
                     <option value="Seasonal">Seasonal</option>
@@ -213,25 +1476,46 @@
                 </div>
               </div>
               <div class="field-row">
-                <div class="field"><label>Weight (px)</label><input type="number" id="route-weight" min="1" max="8" step="0.5" value="2.2" /></div>
-                <div class="field"><label>Opacity</label><input type="number" id="route-opacity" min="0.2" max="1" step="0.05" value="0.92" /></div>
+                <div class="field">
+                  <label for="route-weight">Weight (px)</label>
+                  <input type="number" id="route-weight" min="1" max="8" step="0.5" value="2.2" />
+                </div>
+                <div class="field">
+                  <label for="route-opacity">Opacity</label>
+                  <input type="number" id="route-opacity" min="0.2" max="1" step="0.05" value="0.92" />
+                </div>
               </div>
-              <div class="field"><label>Notes</label><input type="text" id="route-notes" placeholder="Flight numbers / frequency" /></div>
-              <label class="toggle-row"><span>Visible</span><input type="checkbox" id="route-visible" checked /></label>
-              <div style="display:flex;gap:6px;">
+              <div class="field">
+                <label for="route-notes">Notes</label>
+                <input type="text" id="route-notes" placeholder="Flight numbers / frequency" />
+              </div>
+              <label class="toggle-row">
+                <span>Visible on Map</span>
+                <input type="checkbox" id="route-visible" checked />
+              </label>
+              <div style="display:flex;gap:8px;margin-top:2px;">
                 <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">Save Route</button>
                 <button type="button" class="btn" id="btn-cancel-route-edit" style="display:none;">Cancel</button>
               </div>
             </form>
 
-            <div>
-              <div style="margin-bottom:8px;">
+            <div class="table-column">
+              <div class="table-toolbar">
                 <input type="text" id="editor-route-filter" class="search-input" style="width:260px;" placeholder="Filter routes..." />
+                <span style="font-size:11px;color:var(--deat-muted);">Manage active corridors and visibility</span>
               </div>
               <div class="data-table-wrap">
                 <table class="data-table">
                   <thead>
-                    <tr><th>Corridor</th><th>Aircraft</th><th>Category</th><th>Dist.</th><th>Color</th><th>Show</th><th>Actions</th></tr>
+                    <tr>
+                      <th>Corridor</th>
+                      <th>Aircraft</th>
+                      <th>Category</th>
+                      <th>Dist.</th>
+                      <th>Color</th>
+                      <th>Show</th>
+                      <th>Actions</th>
+                    </tr>
                   </thead>
                   <tbody id="table-routes-body"></tbody>
                 </table>
@@ -240,15 +1524,19 @@
           </div>
         </div>
 
+        <!-- TAB 2: AIRPORTS -->
         <div class="editor-pane" id="pane-airports">
           <div class="editor-split">
             <form class="form-box" id="form-airport">
               <h3 id="form-airport-title">Add / Edit Airport</h3>
               <input type="hidden" id="edit-airport-original-icao" />
               <div class="field-row">
-                <div class="field"><label>ICAO Code</label><input type="text" id="ap-icao" maxlength="4" style="text-transform:uppercase;font-family:var(--font-mono);" required /></div>
                 <div class="field">
-                  <label>Continent</label>
+                  <label for="ap-icao">ICAO Code</label>
+                  <input type="text" id="ap-icao" maxlength="4" style="text-transform:uppercase;font-family:var(--font-mono);" placeholder="LOWW" required />
+                </div>
+                <div class="field">
+                  <label for="ap-continent">Continent</label>
                   <select id="ap-continent">
                     <option value="Europe">Europe</option>
                     <option value="Asia">Asia</option>
@@ -259,30 +1547,55 @@
                   </select>
                 </div>
               </div>
-              <div class="field"><label>Airport Name</label><input type="text" id="ap-name" required /></div>
-              <div class="field-row">
-                <div class="field"><label>City</label><input type="text" id="ap-city" required /></div>
-                <div class="field"><label>Country</label><input type="text" id="ap-country" required /></div>
+              <div class="field">
+                <label for="ap-name">Airport Name</label>
+                <input type="text" id="ap-name" placeholder="International Airport" required />
               </div>
               <div class="field-row">
-                <div class="field"><label>Latitude</label><input type="number" id="ap-lat" step="0.0001" min="-90" max="90" required /></div>
-                <div class="field"><label>Longitude</label><input type="number" id="ap-lng" step="0.0001" min="-180" max="180" required /></div>
+                <div class="field">
+                  <label for="ap-city">City</label>
+                  <input type="text" id="ap-city" placeholder="City" required />
+                </div>
+                <div class="field">
+                  <label for="ap-country">Country</label>
+                  <input type="text" id="ap-country" placeholder="Country" required />
+                </div>
               </div>
-              <label class="toggle-row"><span>Airline Hub</span><input type="checkbox" id="ap-hub" /></label>
-              <div style="display:flex;gap:6px;">
+              <div class="field-row">
+                <div class="field">
+                  <label for="ap-lat">Latitude</label>
+                  <input type="number" id="ap-lat" step="0.0001" min="-90" max="90" required />
+                </div>
+                <div class="field">
+                  <label for="ap-lng">Longitude</label>
+                  <input type="number" id="ap-lng" step="0.0001" min="-180" max="180" required />
+                </div>
+              </div>
+              <label class="toggle-row">
+                <span>Airline Hub</span>
+                <input type="checkbox" id="ap-hub" />
+              </label>
+              <div style="display:flex;gap:8px;margin-top:2px;">
                 <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">Save Airport</button>
                 <button type="button" class="btn" id="btn-cancel-ap-edit" style="display:none;">Cancel</button>
               </div>
             </form>
 
-            <div>
-              <div style="margin-bottom:8px;">
+            <div class="table-column">
+              <div class="table-toolbar">
                 <input type="text" id="editor-airport-filter" class="search-input" style="width:260px;" placeholder="Filter airports..." />
               </div>
               <div class="data-table-wrap">
                 <table class="data-table">
                   <thead>
-                    <tr><th>ICAO</th><th>Station</th><th>Country</th><th>Coordinates</th><th>Role</th><th>Actions</th></tr>
+                    <tr>
+                      <th>ICAO</th>
+                      <th>Station</th>
+                      <th>Country</th>
+                      <th>Coordinates</th>
+                      <th>Role</th>
+                      <th>Actions</th>
+                    </tr>
                   </thead>
                   <tbody id="table-airports-body"></tbody>
                 </table>
@@ -291,64 +1604,96 @@
           </div>
         </div>
 
+        <!-- TAB 3: FLEET -->
         <div class="editor-pane" id="pane-aircraft">
           <div class="editor-split">
             <form class="form-box" id="form-aircraft">
               <h3>Add Aircraft Type</h3>
-              <div class="field"><label>Type Designation</label><input type="text" id="ac-type" placeholder="e.g., A350-900" required /></div>
-              <div class="field"><label>Family</label><input type="text" id="ac-family" placeholder="Airbus Widebody" /></div>
-              <div class="field-row">
-                <div class="field"><label>Range (km)</label><input type="number" id="ac-range" placeholder="15000" /></div>
-                <div class="field"><label>Color</label><input type="color" id="ac-color" value="#EE1C25" /></div>
+              <div class="field">
+                <label for="ac-type">Type Designation</label>
+                <input type="text" id="ac-type" placeholder="e.g., A350-900" required />
               </div>
-              <button type="submit" class="btn btn-primary" style="justify-content:center;">Add Fleet Type</button>
+              <div class="field">
+                <label for="ac-family">Family</label>
+                <input type="text" id="ac-family" placeholder="Airbus Widebody" />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="ac-range">Range (km)</label>
+                  <input type="number" id="ac-range" placeholder="15000" />
+                </div>
+                <div class="field">
+                  <label for="ac-color">Color</label>
+                  <input type="color" id="ac-color" value="#EE1C25" />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="justify-content:center;margin-top:2px;">Add Fleet Type</button>
             </form>
 
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr><th>Type</th><th>Family</th><th>Range</th><th>Color</th><th>Routes</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="table-aircraft-body"></tbody>
-              </table>
+            <div class="table-column">
+              <div class="data-table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Family</th>
+                      <th>Range</th>
+                      <th>Color</th>
+                      <th>Routes</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-aircraft-body"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
 
+        <!-- TAB 4: BACKUP, SECURITY & BRAND -->
         <div class="editor-pane" id="pane-data">
           <div class="editor-split">
             <div class="form-box">
-              <h3>Branding &amp; Password Security</h3>
-              <div class="field"><label>Airline Name</label><input type="text" id="setting-airline-name" /></div>
-              <div class="field"><label>Network Subtitle</label><input type="text" id="setting-network-subtitle" /></div>
-              <div class="field"><label>Brand Color</label><input type="color" id="setting-brand-color" /></div>
+              <h3>Branding &amp; Security</h3>
+              <div class="field">
+                <label for="setting-airline-name">Airline Name</label>
+                <input type="text" id="setting-airline-name" />
+              </div>
+              <div class="field">
+                <label for="setting-network-subtitle">Network Subtitle</label>
+                <input type="text" id="setting-network-subtitle" />
+              </div>
+              <div class="field">
+                <label for="setting-brand-color">Brand Color</label>
+                <input type="color" id="setting-brand-color" />
+              </div>
               <button type="button" class="btn btn-primary" id="btn-save-settings" style="justify-content:center;">Save Branding</button>
 
-              <hr style="border:none;border-top:1px solid var(--deat-border);margin:6px 0;" />
+              <hr style="border:none;border-top:1px solid var(--deat-border);margin:4px 0;" />
               <div class="field">
-                <label>New Editor Password (min 8 chars)</label>
-                <input type="password" id="new-editor-password" placeholder="Enter new password..." />
+                <label for="new-editor-password">New Editor Password (min 8 chars)</label>
+                <input type="password" id="new-editor-password" placeholder="Enter new password" />
               </div>
               <button type="button" class="btn" id="btn-change-password" style="justify-content:center;">Update Editor Password</button>
             </div>
 
             <div class="form-box" style="background:#FFFFFF;">
-              <h3>JSON Backup, Import &amp; Factory Reset</h3>
+              <h3>JSON Backup, Import &amp; Reset</h3>
               <p style="font-size:12px;color:var(--deat-slate);line-height:1.5;">
-                Export a complete JSON snapshot of your network (including security hash, branding, fleet, airports, and routes) for web hosting or backup.
+                Export a complete JSON snapshot of your network (airports, routes, fleet, branding, and access configuration) for backup or deployment.
               </p>
-              <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;">
-                <button type="button" class="btn btn-primary" id="btn-export-json">Export network.json</button>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:2px;">
+                <button type="button" class="btn btn-primary" id="btn-export-json">Export Network JSON</button>
                 <label class="btn" style="cursor:pointer;">
-                  Import JSON Backup
+                  Import Network JSON
                   <input type="file" id="input-import-json" accept=".json" style="display:none;" />
                 </label>
               </div>
-              <hr style="border:none;border-top:1px solid var(--deat-border);margin:10px 0;" />
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <hr style="border:none;border-top:1px solid var(--deat-border);margin:8px 0;" />
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
                 <div>
-                  <div style="font-size:12px;font-weight:700;">Reset to Factory ./data/network.json</div>
-                  <div style="font-size:11px;color:var(--deat-muted);">Clears local browser overrides and reloads base JSON.</div>
+                  <div style="font-size:12px;font-weight:700;">Reset Network Dataset</div>
+                  <div style="font-size:11px;color:var(--deat-muted);">Clears saved browser modifications and restores the base network.</div>
                 </div>
                 <button type="button" class="btn btn-danger" id="btn-reset-sample">Reset Data</button>
               </div>
@@ -362,20 +1707,1800 @@
   <!-- BOTTOM BAR -->
   <footer id="bottom-bar">
     <div class="footer-brand">
-      <img src="./assets/deat-emblem.svg" alt="" width="18" height="15" />
+      <svg width="18" height="16" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="54" cy="52" r="27" stroke="#FFFFFF" stroke-width="9" />
+        <path d="M14 14C28 33 52 44 88 47C63 54 47 67 34 86C40 65 34 45 14 14Z" fill="#FFFFFF" />
+      </svg>
       <span id="footer-airline-name">DEAT</span>
       <span style="font-weight:400;opacity:0.92;font-size:12px;" id="footer-network-subtitle">global passenger network</span>
     </div>
     <div class="footer-meta">
       <span id="footer-cursor-coords">LAT 48.11°N  LON 016.57°E</span>
-      <span id="footer-storage-status">ONLINE READY</span>
+      <span id="footer-storage-status">READY</span>
     </div>
   </footer>
 
   <div id="toast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" crossorigin=""></script>
-  <script src="./app.js"></script>
+  <script>
+    const STORAGE_KEY = "deat_online_network_v3";
+    const SESSION_AUTH_KEY = "deat_editor_unlocked_v3";
+
+    const DEFAULT_NETWORK_DATA = {
+      security: {
+        salt: "deat_vienna_salt_2026",
+        passwordHash: "08e69b5e8e0838c2f30fee62f375621fa937b8c9876b31cc04e08dab57af51bb"
+      },
+      settings: {
+        airlineName: "DEAT",
+        networkSubtitle: "global passenger network",
+        brandColor: "#EE1C25",
+        defaultCenter: [28.0, 22.0],
+        defaultZoom: 3
+      },
+      aircraft: [
+        { type: "A350-900", family: "Airbus Widebody", rangeKm: 15000, color: "#EE1C25" },
+        { type: "A350-1000", family: "Airbus Widebody", rangeKm: 16100, color: "#9E0B12" },
+        { type: "B787-9", family: "Boeing Dreamliner", rangeKm: 14140, color: "#1E293B" },
+        { type: "A330-900neo", family: "Airbus Widebody", rangeKm: 13334, color: "#D97706" },
+        { type: "A321XLR", family: "Airbus Long-Range Narrowbody", rangeKm: 8700, color: "#0284C7" },
+        { type: "A321neo", family: "Airbus Narrowbody", rangeKm: 7400, color: "#475569" },
+        { type: "A320neo", family: "Airbus Narrowbody", rangeKm: 6300, color: "#64748B" }
+      ],
+      airports: [
+        { icao: "LOWW", name: "Vienna International Airport", city: "Vienna", country: "Austria", continent: "Europe", lat: 48.1103, lng: 16.5697, isHub: true },
+        { icao: "EGLL", name: "London Heathrow Airport", city: "London", country: "United Kingdom", continent: "Europe", lat: 51.4700, lng: -0.4543, isHub: false },
+        { icao: "EDDM", name: "Munich Airport", city: "Munich", country: "Germany", continent: "Europe", lat: 48.3538, lng: 11.7861, isHub: false },
+        { icao: "EDDF", name: "Frankfurt Airport", city: "Frankfurt", country: "Germany", continent: "Europe", lat: 50.0379, lng: 8.5622, isHub: false },
+        { icao: "LFPG", name: "Paris Charles de Gaulle Airport", city: "Paris", country: "France", continent: "Europe", lat: 49.0097, lng: 2.5479, isHub: false },
+        { icao: "LIRF", name: "Rome Fiumicino Airport", city: "Rome", country: "Italy", continent: "Europe", lat: 41.8003, lng: 12.2389, isHub: false },
+        { icao: "LSZH", name: "Zurich Airport", city: "Zurich", country: "Switzerland", continent: "Europe", lat: 47.4582, lng: 8.5555, isHub: false },
+        { icao: "LEMD", name: "Adolfo Suárez Madrid–Barajas Airport", city: "Madrid", country: "Spain", continent: "Europe", lat: 40.4983, lng: -3.5676, isHub: false },
+        { icao: "EHAM", name: "Amsterdam Airport Schiphol", city: "Amsterdam", country: "Netherlands", continent: "Europe", lat: 52.3105, lng: 4.7683, isHub: false },
+        { icao: "EKCH", name: "Copenhagen Airport", city: "Copenhagen", country: "Denmark", continent: "Europe", lat: 55.6180, lng: 12.6508, isHub: false },
+        { icao: "LGAV", name: "Athens International Airport", city: "Athens", country: "Greece", continent: "Europe", lat: 37.9364, lng: 23.9445, isHub: false },
+
+        { icao: "WSSS", name: "Singapore Changi Airport", city: "Singapore", country: "Singapore", continent: "Asia", lat: 1.3644, lng: 103.9915, isHub: true },
+        { icao: "VTBS", name: "Suvarnabhumi Airport", city: "Bangkok", country: "Thailand", continent: "Asia", lat: 13.6900, lng: 100.7501, isHub: true },
+        { icao: "VHHH", name: "Hong Kong International Airport", city: "Hong Kong", country: "China", continent: "Asia", lat: 22.3080, lng: 113.9185, isHub: false },
+        { icao: "ZBAA", name: "Beijing Capital International Airport", city: "Beijing", country: "China", continent: "Asia", lat: 40.0799, lng: 116.6031, isHub: false },
+        { icao: "ZUCK", name: "Chongqing Jiangbei International Airport", city: "Chongqing", country: "China", continent: "Asia", lat: 29.7192, lng: 106.6417, isHub: false },
+        { icao: "RKSI", name: "Incheon International Airport", city: "Seoul", country: "South Korea", continent: "Asia", lat: 37.4602, lng: 126.4407, isHub: false },
+        { icao: "RKPC", name: "Jeju International Airport", city: "Jeju", country: "South Korea", continent: "Asia", lat: 33.5113, lng: 126.4930, isHub: false },
+        { icao: "RJBB", name: "Kansai International Airport", city: "Osaka", country: "Japan", continent: "Asia", lat: 34.4320, lng: 135.2304, isHub: false },
+        { icao: "RJTT", name: "Tokyo Haneda Airport", city: "Tokyo", country: "Japan", continent: "Asia", lat: 35.5494, lng: 139.7798, isHub: false },
+        { icao: "ROAH", name: "Naha Airport", city: "Naha", country: "Japan", continent: "Asia", lat: 26.1958, lng: 127.6458, isHub: false },
+        { icao: "RCTP", name: "Taiwan Taoyuan International Airport", city: "Taipei", country: "Taiwan", continent: "Asia", lat: 25.0797, lng: 121.2342, isHub: false },
+        { icao: "RPLL", name: "Ninoy Aquino International Airport", city: "Manila", country: "Philippines", continent: "Asia", lat: 14.5086, lng: 121.0194, isHub: false },
+        { icao: "VVTS", name: "Tan Son Nhat International Airport", city: "Ho Chi Minh City", country: "Vietnam", continent: "Asia", lat: 10.8188, lng: 106.6519, isHub: false },
+        { icao: "VVNB", name: "Noi Bai International Airport", city: "Hanoi", country: "Vietnam", continent: "Asia", lat: 21.2212, lng: 105.8072, isHub: false },
+        { icao: "VTSP", name: "Phuket International Airport", city: "Phuket", country: "Thailand", continent: "Asia", lat: 8.1132, lng: 98.3169, isHub: false },
+        { icao: "WMKK", name: "Kuala Lumpur International Airport", city: "Kuala Lumpur", country: "Malaysia", continent: "Asia", lat: 2.7456, lng: 101.7072, isHub: false },
+        { icao: "WIII", name: "Soekarno–Hatta International Airport", city: "Jakarta", country: "Indonesia", continent: "Asia", lat: -6.1256, lng: 106.6559, isHub: false },
+        { icao: "WADD", name: "I Gusti Ngurah Rai International Airport", city: "Bali", country: "Indonesia", continent: "Asia", lat: -8.7482, lng: 115.1672, isHub: false },
+        { icao: "VGHS", name: "Hazrat Shahjalal International Airport", city: "Dhaka", country: "Bangladesh", continent: "Asia", lat: 23.8433, lng: 90.3978, isHub: false },
+        { icao: "VQPR", name: "Paro International Airport", city: "Paro", country: "Bhutan", continent: "Asia", lat: 27.4032, lng: 89.4246, isHub: false },
+        { icao: "OMDB", name: "Dubai International Airport", city: "Dubai", country: "United Arab Emirates", continent: "Asia", lat: 25.2532, lng: 55.3657, isHub: false },
+
+        { icao: "KJFK", name: "John F. Kennedy International Airport", city: "New York", country: "United States", continent: "North America", lat: 40.6413, lng: -73.7781, isHub: false },
+        { icao: "KLAX", name: "Los Angeles International Airport", city: "Los Angeles", country: "United States", continent: "North America", lat: 33.9416, lng: -118.4085, isHub: false },
+        { icao: "KORD", name: "O'Hare International Airport", city: "Chicago", country: "United States", continent: "North America", lat: 41.9742, lng: -87.9073, isHub: false },
+        { icao: "CYYZ", name: "Toronto Pearson International Airport", city: "Toronto", country: "Canada", continent: "North America", lat: 43.6777, lng: -79.6248, isHub: false },
+        { icao: "CYVR", name: "Vancouver International Airport", city: "Vancouver", country: "Canada", continent: "North America", lat: 49.1967, lng: -123.1815, isHub: false },
+
+        { icao: "SBGR", name: "São Paulo/Guarulhos International Airport", city: "São Paulo", country: "Brazil", continent: "South America", lat: -23.4356, lng: -46.4731, isHub: false },
+        { icao: "HECA", name: "Cairo International Airport", city: "Cairo", country: "Egypt", continent: "Africa", lat: 30.1219, lng: 31.4056, isHub: false },
+        { icao: "FAOR", name: "O. R. Tambo International Airport", city: "Johannesburg", country: "South Africa", continent: "Africa", lat: -26.1367, lng: 28.2411, isHub: false },
+        { icao: "YSSY", name: "Sydney Kingsford Smith Airport", city: "Sydney", country: "Australia", continent: "Oceania", lat: -33.9399, lng: 151.1753, isHub: false }
+      ],
+      routes: [
+        { id: "r-1", origin: "LOWW", destination: "EGLL", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.3, opacity: 0.92, status: "Active", visible: true, notes: "DE 388/389 • 4x Daily Flagship Shuttle" },
+        { id: "r-2", origin: "LOWW", destination: "EDDM", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.88, status: "Active", visible: true, notes: "DE 112/113 • High-frequency commuter" },
+        { id: "r-3", origin: "LOWW", destination: "EDDF", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.2, opacity: 0.9, status: "Active", visible: true, notes: "DE 140/141 • 5x Daily" },
+        { id: "r-4", origin: "LOWW", destination: "LFPG", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.2, opacity: 0.9, status: "Active", visible: true, notes: "DE 210/211 • 3x Daily" },
+        { id: "r-5", origin: "LOWW", destination: "LIRF", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.88, status: "Active", visible: true, notes: "DE 412/413 • Daily" },
+        { id: "r-6", origin: "LOWW", destination: "LSZH", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.88, status: "Active", visible: true, notes: "DE 180/181 • 4x Daily" },
+        { id: "r-7", origin: "LOWW", destination: "LEMD", aircraft: "A321neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "DE 504/505 • 2x Daily" },
+        { id: "r-8", origin: "LOWW", destination: "EHAM", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "DE 302/303 • 3x Daily" },
+        { id: "r-9", origin: "LOWW", destination: "EKCH", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.88, status: "Active", visible: true, notes: "DE 610/611 • 2x Daily" },
+        { id: "r-10", origin: "LOWW", destination: "LGAV", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.88, status: "Active", visible: true, notes: "DE 720/721 • Daily" },
+        { id: "r-11", origin: "LOWW", destination: "KJFK", aircraft: "A350-900", category: "Long-Haul", color: "#EE1C25", weight: 2.6, opacity: 0.95, status: "Active", visible: true, notes: "DE 001/002 • Transatlantic Premier" },
+        { id: "r-12", origin: "LOWW", destination: "KORD", aircraft: "B787-9", category: "Long-Haul", color: "#EE1C25", weight: 2.4, opacity: 0.92, status: "Active", visible: true, notes: "DE 015/016 • Daily" },
+        { id: "r-13", origin: "LOWW", destination: "CYYZ", aircraft: "A321XLR", category: "Long-Haul", color: "#EE1C25", weight: 2.2, opacity: 0.92, status: "Active", visible: true, notes: "DE 021/022 • 5x Weekly" },
+        { id: "r-14", origin: "LOWW", destination: "KLAX", aircraft: "A350-1000", category: "Long-Haul", color: "#EE1C25", weight: 2.5, opacity: 0.94, status: "Active", visible: true, notes: "DE 009/010 • 4x Weekly" },
+        { id: "r-15", origin: "LOWW", destination: "VTBS", aircraft: "A350-900", category: "Long-Haul", color: "#EE1C25", weight: 2.6, opacity: 0.95, status: "Active", visible: true, notes: "DE 081/082 • Europe-Asia Trunk" },
+        { id: "r-16", origin: "LOWW", destination: "WSSS", aircraft: "A350-1000", category: "Long-Haul", color: "#EE1C25", weight: 2.6, opacity: 0.95, status: "Active", visible: true, notes: "DE 085/086 • Daily Nonstop" },
+        { id: "r-17", origin: "LOWW", destination: "RJTT", aircraft: "B787-9", category: "Long-Haul", color: "#EE1C25", weight: 2.5, opacity: 0.94, status: "Active", visible: true, notes: "DE 091/092 • Daily" },
+        { id: "r-18", origin: "LOWW", destination: "ZBAA", aircraft: "A350-900", category: "Long-Haul", color: "#EE1C25", weight: 2.4, opacity: 0.92, status: "Active", visible: true, notes: "DE 071/072 • 5x Weekly" },
+        { id: "r-19", origin: "LOWW", destination: "OMDB", aircraft: "A330-900neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.3, opacity: 0.92, status: "Active", visible: true, notes: "DE 051/052 • Daily" },
+        { id: "r-20", origin: "LOWW", destination: "HECA", aircraft: "A321XLR", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "DE 041/042 • Daily" },
+        { id: "r-21", origin: "LOWW", destination: "FAOR", aircraft: "A350-900", category: "Long-Haul", color: "#EE1C25", weight: 2.4, opacity: 0.92, status: "Active", visible: true, notes: "DE 045/046 • 4x Weekly" },
+        { id: "r-22", origin: "LOWW", destination: "SBGR", aircraft: "B787-9", category: "Long-Haul", color: "#EE1C25", weight: 2.4, opacity: 0.92, status: "Active", visible: true, notes: "DE 031/032 • 3x Weekly" },
+        { id: "r-23", origin: "VTBS", destination: "VVNB", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.1, opacity: 0.92, status: "Active", visible: true, notes: "Bangkok – Hanoi" },
+        { id: "r-24", origin: "VTBS", destination: "ZUCK", aircraft: "A321neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.92, status: "Active", visible: true, notes: "Bangkok – Chongqing" },
+        { id: "r-25", origin: "VTBS", destination: "VHHH", aircraft: "A330-900neo", category: "Regional", color: "#EE1C25", weight: 2.2, opacity: 0.92, status: "Active", visible: true, notes: "Bangkok – Hong Kong" },
+        { id: "r-26", origin: "VTBS", destination: "RPLL", aircraft: "A321neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.92, status: "Active", visible: true, notes: "Bangkok – Manila" },
+        { id: "r-27", origin: "WSSS", destination: "WMKK", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Singapore – Kuala Lumpur" },
+        { id: "r-28", origin: "WSSS", destination: "VHHH", aircraft: "A350-900", category: "Medium-Haul", color: "#EE1C25", weight: 2.2, opacity: 0.92, status: "Active", visible: true, notes: "Singapore – Hong Kong" },
+        { id: "r-29", origin: "WSSS", destination: "RKSI", aircraft: "A350-900", category: "Medium-Haul", color: "#EE1C25", weight: 2.2, opacity: 0.92, status: "Active", visible: true, notes: "Singapore – Seoul Incheon" },
+        { id: "r-30", origin: "WSSS", destination: "RPLL", aircraft: "A330-900neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.2, opacity: 0.92, status: "Active", visible: true, notes: "Singapore – Manila" },
+        { id: "r-31", origin: "WSSS", destination: "YSSY", aircraft: "A350-1000", category: "Long-Haul", color: "#EE1C25", weight: 2.5, opacity: 0.94, status: "Active", visible: true, notes: "Singapore – Sydney" },
+        { id: "r-32", origin: "WIII", destination: "WADD", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Jakarta – Bali" },
+        { id: "r-33", origin: "WADD", destination: "RPLL", aircraft: "A321neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "Bali – Manila" },
+        { id: "r-34", origin: "WMKK", destination: "VTSP", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Kuala Lumpur – Phuket" },
+        { id: "r-35", origin: "VTSP", destination: "VGHS", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Phuket – Dhaka" },
+        { id: "r-36", origin: "VGHS", destination: "VQPR", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Dhaka – Paro" },
+        { id: "r-37", origin: "VGHS", destination: "VVNB", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Dhaka – Hanoi" },
+        { id: "r-38", origin: "VGHS", destination: "ZUCK", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Dhaka – Chongqing" },
+        { id: "r-39", origin: "ZUCK", destination: "ZBAA", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "Chongqing – Beijing" },
+        { id: "r-40", origin: "ZUCK", destination: "RCTP", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "Chongqing – Taipei" },
+        { id: "r-41", origin: "ZBAA", destination: "RJBB", aircraft: "A330-900neo", category: "Regional", color: "#EE1C25", weight: 2.2, opacity: 0.92, status: "Active", visible: true, notes: "Beijing – Osaka Kansai" },
+        { id: "r-42", origin: "RKSI", destination: "RJBB", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Seoul – Osaka Kansai" },
+        { id: "r-43", origin: "RKSI", destination: "VVTS", aircraft: "A330-900neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.92, status: "Active", visible: true, notes: "Seoul – Ho Chi Minh City" },
+        { id: "r-44", origin: "RJBB", destination: "RKPC", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Osaka – Jeju" },
+        { id: "r-45", origin: "RJBB", destination: "ROAH", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Osaka – Naha" },
+        { id: "r-46", origin: "RJBB", destination: "RPLL", aircraft: "A321neo", category: "Medium-Haul", color: "#EE1C25", weight: 2.1, opacity: 0.92, status: "Active", visible: true, notes: "Osaka – Manila" },
+        { id: "r-47", origin: "ROAH", destination: "RCTP", aircraft: "A320neo", category: "Regional", color: "#EE1C25", weight: 2.0, opacity: 0.9, status: "Active", visible: true, notes: "Naha – Taipei" },
+        { id: "r-48", origin: "VHHH", destination: "RPLL", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "Hong Kong – Manila" },
+        { id: "r-49", origin: "VVTS", destination: "RPLL", aircraft: "A321neo", category: "Regional", color: "#EE1C25", weight: 2.1, opacity: 0.9, status: "Active", visible: true, notes: "Ho Chi Minh City – Manila" },
+        { id: "r-50", origin: "RJTT", destination: "KLAX", aircraft: "B787-9", category: "Long-Haul", color: "#EE1C25", weight: 2.5, opacity: 0.94, status: "Active", visible: true, notes: "Transpacific Corridor" },
+        { id: "r-51", origin: "RKSI", destination: "CYVR", aircraft: "A350-900", category: "Long-Haul", color: "#EE1C25", weight: 2.4, opacity: 0.92, status: "Active", visible: true, notes: "North Pacific Corridor" }
+      ]
+    };
+
+    const CONTINENT_COLORS = {
+      "Europe": "#EE1C25",
+      "Asia": "#0F172A",
+      "North America": "#0284C7",
+      "South America": "#059669",
+      "Africa": "#D97706",
+      "Oceania": "#7C3AED"
+    };
+
+    const CATEGORY_COLORS = {
+      "Long-Haul": "#EE1C25",
+      "Medium-Haul": "#1E293B",
+      "Regional": "#0284C7",
+      "Seasonal": "#D97706",
+      "Cargo": "#059669"
+    };
+
+    let networkData = null;
+    let pendingProtectedAction = null;
+
+    let state = {
+      colorMode: "brand",
+      filters: {
+        continents: new Set(),
+        aircraft: new Set(),
+        categories: new Set(),
+        country: "",
+        hub: "",
+        hubsOnly: false
+      },
+      display: {
+        showIcao: true,
+        showCity: true,
+        showArrows: false
+      },
+      selection: {
+        type: null,
+        id: null
+      }
+    };
+
+    let map = null;
+    let routesLayerGroup = null;
+    let markersLayerGroup = null;
+    let routeLayersById = new Map();
+    let markerLayersByIcao = new Map();
+
+    /* ================= PASSWORD AUTHENTICATION ================= */
+    async function hashPassword(password, salt) {
+      const enc = new TextEncoder();
+      const data = enc.encode(`${salt}:${password}`);
+      const digest = await crypto.subtle.digest("SHA-256", data);
+      return Array.from(new Uint8Array(digest))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+
+    function isEditorUnlocked() {
+      return sessionStorage.getItem(SESSION_AUTH_KEY) === "true";
+    }
+
+    function setEditorUnlocked(unlocked) {
+      if (unlocked) {
+        sessionStorage.setItem(SESSION_AUTH_KEY, "true");
+      } else {
+        sessionStorage.removeItem(SESSION_AUTH_KEY);
+      }
+      updateAuthButtonUI();
+    }
+
+    function updateAuthButtonUI() {
+      const btn = document.getElementById("btn-open-editor");
+      if (!btn) return;
+      if (isEditorUnlocked()) {
+        btn.className = "btn btn-unlocked";
+        btn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          Network Editor (Unlocked)
+        `;
+      } else {
+        btn.className = "btn btn-primary";
+        btn.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Edit Network (Locked)
+        `;
+      }
+    }
+
+    function requireUnlocked(actionFn) {
+      if (isEditorUnlocked()) {
+        actionFn();
+        return;
+      }
+      pendingProtectedAction = actionFn;
+      openPasswordModal();
+    }
+
+    function openPasswordModal() {
+      const errEl = document.getElementById("auth-error");
+      errEl.classList.remove("show");
+      errEl.textContent = "";
+      const pwInput = document.getElementById("auth-password-input");
+      pwInput.value = "";
+      document.getElementById("auth-modal").classList.add("open");
+      setTimeout(() => pwInput.focus(), 40);
+    }
+
+    function closePasswordModal() {
+      pendingProtectedAction = null;
+      document.getElementById("auth-modal").classList.remove("open");
+    }
+
+    /* ================= DATA STORAGE ================= */
+    async function loadInitialData() {
+      try {
+        const savedRaw = localStorage.getItem(STORAGE_KEY);
+        if (savedRaw) {
+          const parsed = JSON.parse(savedRaw);
+          if (parsed && Array.isArray(parsed.airports) && Array.isArray(parsed.routes)) {
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.warn("localStorage read issue:", err);
+      }
+
+      // Attempt external ./data/network.json when served over HTTP(S), else use embedded dataset
+      if (window.location.protocol !== "file:") {
+        try {
+          const res = await fetch("./data/network.json", { cache: "no-store" });
+          if (res.ok) {
+            const ext = await res.json();
+            if (ext && Array.isArray(ext.airports) && Array.isArray(ext.routes)) {
+              return ext;
+            }
+          }
+        } catch (_) {
+          // Fallback to embedded default dataset
+        }
+      }
+
+      return JSON.parse(JSON.stringify(DEFAULT_NETWORK_DATA));
+    }
+
+    function saveNetworkData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(networkData));
+        document.getElementById("footer-storage-status").textContent =
+          "SAVED " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      } catch (e) {
+        showToast("Could not write to browser storage.");
+      }
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.remove("show"), 3000);
+    }
+
+    /* ================= GEODESIC ARCS & ANTIMERIDIAN HANDLING ================= */
+    function toRad(deg) { return (deg * Math.PI) / 180; }
+    function toDeg(rad) { return (rad * 180) / Math.PI; }
+
+    function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    function computeSplitFlightArcs(ap1, ap2) {
+      const lat1 = toRad(ap1.lat);
+      const lon1 = toRad(ap1.lng);
+      const lat2 = toRad(ap2.lat);
+      const lon2 = toRad(ap2.lng);
+
+      const cosD =
+        Math.sin(lat1) * Math.sin(lat2) +
+        Math.cos(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+      const d = Math.acos(Math.max(-1, Math.min(1, cosD)));
+
+      const steps = 64;
+      const rawPts = [];
+
+      if (d < 0.0001) {
+        rawPts.push([ap1.lat, ap1.lng], [ap2.lat, ap2.lng]);
+      } else {
+        const sinD = Math.sin(d);
+        for (let i = 0; i <= steps; i++) {
+          const f = i / steps;
+          const A = Math.sin((1 - f) * d) / sinD;
+          const B = Math.sin(f * d) / sinD;
+          const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
+          const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
+          const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+          const lat = toDeg(Math.atan2(z, Math.sqrt(x * x + y * y)));
+          let lon = toDeg(Math.atan2(y, x));
+          lon = ((lon + 540) % 360) - 180;
+          rawPts.push([lat, lon]);
+        }
+      }
+
+      const segments = [[]];
+      for (let i = 0; i < rawPts.length; i++) {
+        const curr = rawPts[i];
+        const currentSeg = segments[segments.length - 1];
+        if (currentSeg.length > 0) {
+          const prev = currentSeg[currentSeg.length - 1];
+          if (Math.abs(curr[1] - prev[1]) > 180) {
+            segments.push([curr]);
+            continue;
+          }
+        }
+        currentSeg.push(curr);
+      }
+
+      return segments.filter(seg => seg.length >= 2);
+    }
+
+    /* ================= GEOJSON SANITIZER (FIXES HORIZONTAL GREY BANDS) ================= */
+    function sanitizeGeoJsonFeatures(geojson) {
+      if (!geojson || !Array.isArray(geojson.features)) return geojson;
+
+      const cleanRing = (ring) => {
+        if (!Array.isArray(ring) || ring.length < 4) return [];
+        const out = [];
+        for (let i = 0; i < ring.length; i++) {
+          const pt = ring[i];
+          if (!Array.isArray(pt) || pt.length < 2) continue;
+          const lon = pt[0];
+          const lat = pt[1];
+          if (Math.abs(lat) > 89.9) continue;
+          if (out.length > 0) {
+            const prev = out[out.length - 1];
+            // If a polygon edge jumps across the antimeridian (> 170 deg), break the segment
+            if (Math.abs(lon - prev[0]) > 170) {
+              if (out.length >= 3) {
+                break;
+              }
+              out.length = 0;
+            }
+          }
+          out.push([lon, lat]);
+        }
+        return out.length >= 3 ? out : [];
+      };
+
+      const cleanedFeatures = [];
+      for (const feat of geojson.features) {
+        if (!feat || !feat.geometry) continue;
+        // Exclude Antarctica
+        if (String(feat.id) === "010" || feat.properties?.name === "Antarctica") continue;
+
+        const geom = feat.geometry;
+        if (geom.type === "Polygon") {
+          const rings = geom.coordinates.map(cleanRing).filter(r => r.length >= 3);
+          if (rings.length > 0) {
+            cleanedFeatures.push({ ...feat, geometry: { type: "Polygon", coordinates: rings } });
+          }
+        } else if (geom.type === "MultiPolygon") {
+          const polys = [];
+          for (const poly of geom.coordinates) {
+            const rings = poly.map(cleanRing).filter(r => r.length >= 3);
+            if (rings.length > 0) polys.push(rings);
+          }
+          if (polys.length > 0) {
+            cleanedFeatures.push({ ...feat, geometry: { type: "MultiPolygon", coordinates: polys } });
+          }
+        }
+      }
+
+      return { type: "FeatureCollection", features: cleanedFeatures };
+    }
+
+    /* ================= MAP INITIALIZATION ================= */
+    async function initMap() {
+      const center = (networkData.settings && networkData.settings.defaultCenter) || [28, 22];
+      const zoom = (networkData.settings && networkData.settings.defaultZoom) || 3;
+
+      map = L.map("map", {
+        center,
+        zoom,
+        minZoom: 2,
+        maxZoom: 11,
+        zoomControl: false,
+        worldCopyJump: false,
+        preferCanvas: false
+      });
+
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+
+      routesLayerGroup = L.layerGroup().addTo(map);
+      markersLayerGroup = L.layerGroup().addTo(map);
+
+      await loadCleanWorldLandmasses();
+
+      map.on("mousemove", (e) => {
+        const lat = e.latlng.lat;
+        const lng = ((e.latlng.lng + 540) % 360) - 180;
+        const ns = lat >= 0 ? "N" : "S";
+        const ew = lng >= 0 ? "E" : "W";
+        document.getElementById("footer-cursor-coords").textContent =
+          `LAT ${Math.abs(lat).toFixed(2)}°${ns}  LON ${Math.abs(lng).toFixed(2).padStart(6, "0")}°${ew}`;
+      });
+
+      map.on("zoomend", updateLabelDensity);
+      map.on("moveend", updateLabelDensity);
+      map.on("resize", () => map.invalidateSize());
+
+      map.on("click", () => {
+        if (state.selection.type) {
+          clearSelection();
+        }
+      });
+
+      applyBrandTheme();
+      updateAuthButtonUI();
+      rebuildFilterUI();
+      renderNetwork();
+    }
+
+    async function loadCleanWorldLandmasses() {
+      const geoJsonSources = [
+        "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
+      ];
+
+      let loaded = false;
+      for (const url of geoJsonSources) {
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) continue;
+          const topo = await resp.json();
+
+          // Convert TopoJSON to GeoJSON cleanly without antimeridian wrap streaks
+          if (topo && topo.type === "Topology" && topo.objects && topo.objects.countries) {
+            const rawGeo = topojsonFromObject(topo, topo.objects.countries);
+            const cleanGeo = sanitizeGeoJsonFeatures(rawGeo);
+            L.geoJSON(cleanGeo, {
+              interactive: false,
+              style: {
+                fillColor: "#D6D8DC",
+                fillOpacity: 1,
+                color: "#FFFFFF",
+                weight: 0.85,
+                opacity: 1,
+                lineJoin: "round"
+              }
+            }).addTo(map);
+            loaded = true;
+            break;
+          }
+        } catch (_) {
+          // Try next source
+        }
+      }
+
+      if (!loaded) {
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+          attribution: "&copy; OpenStreetMap &copy; CARTO",
+          subdomains: "abcd",
+          maxZoom: 18
+        }).addTo(map);
+      }
+    }
+
+    // Self-contained TopoJSON -> GeoJSON decoder (no external script dependency issues)
+    function topojsonFromObject(topology, obj) {
+      const transform = topology.transform;
+      const arcs = topology.arcs.map((arc) => {
+        let x = 0, y = 0;
+        return arc.map((pt) => {
+          x += pt[0];
+          y += pt[1];
+          if (transform) {
+            return [
+              x * transform.scale[0] + transform.translate[0],
+              y * transform.scale[1] + transform.translate[1]
+            ];
+          }
+          return [x, y];
+        });
+      });
+
+      const stitchRing = (arcIndices) => {
+        const coords = [];
+        for (const idx of arcIndices) {
+          const rev = idx < 0;
+          const arc = arcs[rev ? ~idx : idx];
+          const pts = rev ? [...arc].reverse() : arc;
+          for (let i = 0; i < pts.length; i++) {
+            if (coords.length > 0 && i === 0) continue;
+            coords.push(pts[i]);
+          }
+        }
+        return coords;
+      };
+
+      const features = obj.geometries.map((geom, i) => {
+        if (geom.type === "Polygon") {
+          return {
+            type: "Feature",
+            id: geom.id || i,
+            properties: geom.properties || {},
+            geometry: {
+              type: "Polygon",
+              coordinates: geom.arcs.map(stitchRing)
+            }
+          };
+        }
+        if (geom.type === "MultiPolygon") {
+          return {
+            type: "Feature",
+            id: geom.id || i,
+            properties: geom.properties || {},
+            geometry: {
+              type: "MultiPolygon",
+              coordinates: geom.arcs.map(poly => poly.map(stitchRing))
+            }
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      return { type: "FeatureCollection", features };
+    }
+
+    /* ================= FILTERING, COLOR MODES & RENDERING ================= */
+    function getAirportMap() {
+      const m = new Map();
+      networkData.airports.forEach(ap => m.set(ap.icao, ap));
+      return m;
+    }
+
+    function getFilteredRoutes() {
+      const apMap = getAirportMap();
+      return networkData.routes.filter((r) => {
+        if (!r.visible) return false;
+        const orig = apMap.get(r.origin);
+        const dest = apMap.get(r.destination);
+        if (!orig || !dest) return false;
+
+        if (state.filters.hubsOnly && (!orig.isHub || !dest.isHub)) return false;
+
+        if (state.filters.continents.size > 0) {
+          if (!state.filters.continents.has(orig.continent) && !state.filters.continents.has(dest.continent)) {
+            return false;
+          }
+        }
+
+        if (state.filters.aircraft.size > 0 && !state.filters.aircraft.has(r.aircraft)) {
+          return false;
+        }
+
+        if (state.filters.categories.size > 0 && !state.filters.categories.has(r.category)) {
+          return false;
+        }
+
+        if (state.filters.country) {
+          if (orig.country !== state.filters.country && dest.country !== state.filters.country) {
+            return false;
+          }
+        }
+
+        if (state.filters.hub) {
+          if (r.origin !== state.filters.hub && r.destination !== state.filters.hub) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    function resolveRouteColor(route, apMap) {
+      if (state.colorMode === "brand") {
+        return route.color || (networkData.settings && networkData.settings.brandColor) || "#EE1C25";
+      }
+      if (state.colorMode === "aircraft") {
+        const ac = networkData.aircraft.find(a => a.type === route.aircraft);
+        return ac ? ac.color : "#475569";
+      }
+      if (state.colorMode === "continent") {
+        const dest = apMap.get(route.destination);
+        return (dest && CONTINENT_COLORS[dest.continent]) || "#EE1C25";
+      }
+      if (state.colorMode === "category") {
+        return CATEGORY_COLORS[route.category] || "#EE1C25";
+      }
+      return route.color || "#EE1C25";
+    }
+
+    function renderNetwork() {
+      routesLayerGroup.clearLayers();
+      markersLayerGroup.clearLayers();
+      routeLayersById.clear();
+      markerLayersByIcao.clear();
+
+      const apMap = getAirportMap();
+      const filteredRoutes = getFilteredRoutes();
+
+      const hasFilters =
+        state.filters.continents.size > 0 ||
+        state.filters.aircraft.size > 0 ||
+        state.filters.categories.size > 0 ||
+        state.filters.country !== "" ||
+        state.filters.hub !== "" ||
+        state.filters.hubsOnly;
+
+      const activeIcaos = new Set();
+      filteredRoutes.forEach(r => {
+        activeIcaos.add(r.origin);
+        activeIcaos.add(r.destination);
+      });
+
+      const visibleAirports = networkData.airports.filter(ap => {
+        if (state.filters.hubsOnly && !ap.isHub) return false;
+        if (!hasFilters) return true;
+        return activeIcaos.has(ap.icao);
+      });
+
+      filteredRoutes.forEach((route) => {
+        const orig = apMap.get(route.origin);
+        const dest = apMap.get(route.destination);
+        if (!orig || !dest) return;
+
+        const color = resolveRouteColor(route, apMap);
+        const segments = computeSplitFlightArcs(orig, dest);
+        const lines = [];
+
+        segments.forEach((latlngs) => {
+          const hitLine = L.polyline(latlngs, {
+            color: "#000000",
+            weight: 12,
+            opacity: 0,
+            interactive: true
+          }).addTo(routesLayerGroup);
+
+          const visualLine = L.polyline(latlngs, {
+            color,
+            weight: route.weight || 2.2,
+            opacity: route.opacity || 0.92,
+            lineCap: "round",
+            lineJoin: "round",
+            interactive: false
+          }).addTo(routesLayerGroup);
+
+          if (state.display.showArrows && latlngs.length > 6) {
+            const midIdx = Math.floor(latlngs.length / 2);
+            const p1 = latlngs[midIdx - 1];
+            const p2 = latlngs[midIdx];
+            const angle = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * (180 / Math.PI);
+            L.marker(latlngs[midIdx], {
+              interactive: false,
+              icon: L.divIcon({
+                className: "deat-airport-marker",
+                html: `<div style="transform:translate(-50%,-50%) rotate(${angle - 90}deg);color:${color};font-size:10px;font-weight:900;line-height:1;text-shadow:0 0 2px #fff;">▲</div>`,
+                iconSize: [0, 0],
+                iconAnchor: [0, 0]
+              })
+            }).addTo(routesLayerGroup);
+          }
+
+          hitLine.on("mouseover", () => handleRouteHover(route.id, true));
+          hitLine.on("mouseout", () => handleRouteHover(route.id, false));
+          hitLine.on("click", (e) => {
+            L.DomEvent.stopPropagation(e);
+            selectRoute(route.id);
+          });
+
+          lines.push({
+            visualLine,
+            hitLine,
+            baseWeight: route.weight || 2.2,
+            baseOpacity: route.opacity || 0.92
+          });
+        });
+
+        routeLayersById.set(route.id, { route, lines });
+      });
+
+      visibleAirports.forEach((ap) => {
+        const marker = L.marker([ap.lat, ap.lng], {
+          icon: buildAirportDivIcon(ap),
+          zIndexOffset: ap.isHub ? 600 : 200
+        }).addTo(markersLayerGroup);
+
+        marker.bindTooltip(
+          `<strong>${ap.icao}</strong> — ${escapeHtml(ap.city)}<br><span style="font-size:10px;color:#555;">${escapeHtml(ap.name)} (${escapeHtml(ap.country)})</span>`,
+          { direction: "top", offset: [0, -10] }
+        );
+
+        marker.on("click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          selectAirport(ap.icao);
+        });
+
+        markerLayersByIcao.set(ap.icao, { airport: ap, marker });
+      });
+
+      applySelectionStyling();
+      updateLabelDensity();
+      updateStats(filteredRoutes, visibleAirports);
+      updateLegend(filteredRoutes);
+    }
+
+    function buildAirportDivIcon(ap) {
+      const isSelected = state.selection.type === "airport" && state.selection.id === ap.icao;
+      const cityHtml = state.display.showCity
+        ? `<div class="airport-label-city">${escapeHtml(ap.city.toLowerCase())}</div>`
+        : "";
+      const icaoHtml = state.display.showIcao
+        ? `<div class="airport-label-icao">${escapeHtml(ap.icao)}</div>`
+        : "";
+
+      return L.divIcon({
+        className: "deat-airport-marker",
+        html: `
+          <div class="airport-pin-wrap ${ap.isHub ? "hub" : ""} ${isSelected ? "selected" : ""}" data-icao="${ap.icao}">
+            <div class="airport-ring"></div>
+            <div class="airport-label">${cityHtml}${icaoHtml}</div>
+          </div>
+        `,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      });
+    }
+
+    function updateLabelDensity() {
+      const zoom = map.getZoom();
+      const placedBoxes = [];
+
+      const entries = Array.from(markerLayersByIcao.values()).sort((a, b) => {
+        const rankA = state.selection.id === a.airport.icao ? 2 : (a.airport.isHub ? 1 : 0);
+        const rankB = state.selection.id === b.airport.icao ? 2 : (b.airport.isHub ? 1 : 0);
+        return rankB - rankA;
+      });
+
+      entries.forEach(({ airport, marker }) => {
+        const el = marker.getElement();
+        if (!el) return;
+        const labelEl = el.querySelector(".airport-label");
+        if (!labelEl) return;
+
+        const isPriority =
+          airport.isHub ||
+          state.selection.id === airport.icao ||
+          (state.selection.type === "route" && isAirportInSelectedRoute(airport.icao));
+
+        if (zoom <= 2 && !isPriority) {
+          labelEl.style.display = "none";
+          return;
+        }
+
+        const pt = map.latLngToContainerPoint(marker.getLatLng());
+        const box = {
+          left: pt.x - 36,
+          right: pt.x + 36,
+          top: pt.y + 4,
+          bottom: pt.y + 28
+        };
+
+        if (isPriority || zoom >= 6) {
+          labelEl.style.display = "block";
+          placedBoxes.push(box);
+        } else {
+          const overlaps = placedBoxes.some(b =>
+            !(box.right < b.left || box.left > b.right || box.bottom < b.top || box.top > b.bottom)
+          );
+          if (overlaps) {
+            labelEl.style.display = "none";
+          } else {
+            labelEl.style.display = "block";
+            placedBoxes.push(box);
+          }
+        }
+      });
+    }
+
+    function isAirportInSelectedRoute(icao) {
+      if (state.selection.type !== "route") return false;
+      const r = networkData.routes.find(x => x.id === state.selection.id);
+      return r && (r.origin === icao || r.destination === icao);
+    }
+
+    /* ================= SELECTION & INSPECTOR ================= */
+    function handleRouteHover(routeId, isHover) {
+      if (state.selection.type) return;
+      const entry = routeLayersById.get(routeId);
+      if (!entry) return;
+      entry.lines.forEach(l => {
+        l.visualLine.setStyle({
+          weight: isHover ? l.baseWeight + 2 : l.baseWeight,
+          opacity: isHover ? 1 : l.baseOpacity
+        });
+        if (isHover) l.visualLine.bringToFront();
+      });
+    }
+
+    function applySelectionStyling() {
+      const sel = state.selection;
+
+      routeLayersById.forEach(({ route, lines }, id) => {
+        let isHighlighted = false;
+        let isDimmed = false;
+
+        if (sel.type === "route") {
+          isHighlighted = id === sel.id;
+          isDimmed = !isHighlighted;
+        } else if (sel.type === "airport") {
+          isHighlighted = route.origin === sel.id || route.destination === sel.id;
+          isDimmed = !isHighlighted;
+        }
+
+        lines.forEach(l => {
+          if (isHighlighted) {
+            l.visualLine.setStyle({ weight: l.baseWeight + 1.8, opacity: 1 });
+            l.visualLine.bringToFront();
+          } else if (isDimmed) {
+            l.visualLine.setStyle({ weight: Math.max(1.2, l.baseWeight - 0.5), opacity: 0.16 });
+          } else {
+            l.visualLine.setStyle({ weight: l.baseWeight, opacity: l.baseOpacity });
+          }
+        });
+      });
+
+      markerLayersByIcao.forEach(({ marker }, icao) => {
+        let isConnected = true;
+        if (sel.type === "airport") {
+          isConnected = icao === sel.id || Array.from(routeLayersById.values()).some(({ route }) =>
+            (route.origin === sel.id && route.destination === icao) ||
+            (route.destination === sel.id && route.origin === icao)
+          );
+        } else if (sel.type === "route") {
+          isConnected = isAirportInSelectedRoute(icao);
+        }
+
+        const el = marker.getElement();
+        if (!el) return;
+        const wrap = el.querySelector(".airport-pin-wrap");
+        if (!wrap) return;
+        wrap.classList.toggle("dimmed", sel.type !== null && !isConnected);
+        wrap.classList.toggle("selected",
+          (sel.type === "airport" && sel.id === icao) ||
+          (sel.type === "route" && isAirportInSelectedRoute(icao))
+        );
+      });
+    }
+
+    function clearSelection() {
+      state.selection = { type: null, id: null };
+      document.getElementById("inspector-panel").classList.remove("open");
+      applySelectionStyling();
+      updateLabelDensity();
+    }
+
+    function selectAirport(icao, panTo = false) {
+      const ap = networkData.airports.find(a => a.icao === icao);
+      if (!ap) return;
+
+      state.selection = { type: "airport", id: icao };
+      applySelectionStyling();
+      updateLabelDensity();
+
+      if (panTo) {
+        map.flyTo([ap.lat, ap.lng], Math.max(map.getZoom(), 5), { duration: 0.65 });
+      }
+
+      const apMap = getAirportMap();
+      const connectedRoutes = networkData.routes.filter(r => r.origin === icao || r.destination === icao);
+      const aircraftSet = new Set(connectedRoutes.map(r => r.aircraft));
+      const destSet = new Set(connectedRoutes.map(r => (r.origin === icao ? r.destination : r.origin)));
+
+      const hero = document.getElementById("inspector-hero");
+      hero.className = "inspector-hero" + (ap.isHub ? " hub-hero" : "");
+      document.getElementById("inspector-kicker").innerHTML =
+        `<span>ICAO STATION</span>${ap.isHub ? '<span class="hub-badge">PRIMARY HUB</span>' : ""}`;
+      document.getElementById("inspector-code").textContent = ap.icao;
+      document.getElementById("inspector-title").textContent = ap.name;
+      document.getElementById("inspector-sub").textContent = `${ap.city}, ${ap.country} • ${ap.continent}`;
+
+      document.getElementById("inspector-body").innerHTML = `
+        <div class="meta-grid">
+          <div><div class="meta-cell-lbl">Destinations</div><div class="meta-cell-val">${destSet.size} Stations</div></div>
+          <div><div class="meta-cell-lbl">Total Routes</div><div class="meta-cell-val">${connectedRoutes.length} Sectors</div></div>
+          <div><div class="meta-cell-lbl">Coordinates</div><div class="meta-cell-val">${ap.lat.toFixed(2)}°, ${ap.lng.toFixed(2)}°</div></div>
+          <div><div class="meta-cell-lbl">Operating Fleet</div><div class="meta-cell-val">${aircraftSet.size} Types</div></div>
+        </div>
+
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="flex:1;justify-content:center;" onclick="requireUnlocked(() => openEditorForAirport('${ap.icao}'))">Edit Airport</button>
+          <button class="btn btn-sm btn-primary" style="flex:1;justify-content:center;" onclick="requireUnlocked(() => openNewRouteFrom('${ap.icao}'))">+ Add Route</button>
+        </div>
+
+        <div class="section-subhead">Connected Destinations (${connectedRoutes.length})</div>
+        <div class="connected-list">
+          ${connectedRoutes.map(r => {
+            const otherIcao = r.origin === icao ? r.destination : r.origin;
+            const other = apMap.get(otherIcao);
+            if (!other) return "";
+            const dist = haversineDistanceKm(ap.lat, ap.lng, other.lat, other.lng);
+            return `
+              <div class="connected-item" onclick="selectAirport('${other.icao}', true)">
+                <div class="ci-main">
+                  <span class="ci-city">${escapeHtml(other.city)} <span class="mono" style="color:var(--deat-red);">(${other.icao})</span></span>
+                  <span class="ci-meta">${escapeHtml(other.country)} • ${dist.toLocaleString()} km</span>
+                </div>
+                <div class="ci-right">
+                  <span class="ci-aircraft">${escapeHtml(r.aircraft)}</span>
+                  <span style="font-size:9.5px;color:var(--deat-muted);">${escapeHtml(r.category)}</span>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+
+      document.getElementById("inspector-panel").classList.add("open");
+    }
+
+    function selectRoute(routeId) {
+      const route = networkData.routes.find(r => r.id === routeId);
+      if (!route) return;
+
+      state.selection = { type: "route", id: routeId };
+      applySelectionStyling();
+      updateLabelDensity();
+
+      const apMap = getAirportMap();
+      const orig = apMap.get(route.origin);
+      const dest = apMap.get(route.destination);
+      if (!orig || !dest) return;
+
+      const distKm = haversineDistanceKm(orig.lat, orig.lng, dest.lat, dest.lng);
+      const distNm = Math.round(distKm * 0.539957);
+      const estHours = (distKm / 840 + 0.4).toFixed(1);
+
+      const hero = document.getElementById("inspector-hero");
+      hero.className = "inspector-hero hub-hero";
+      document.getElementById("inspector-kicker").innerHTML =
+        `<span>FLIGHT CORRIDOR</span><span class="hub-badge">${escapeHtml(route.status || "Active")}</span>`;
+      document.getElementById("inspector-code").textContent = `${orig.icao} — ${dest.icao}`;
+      document.getElementById("inspector-title").textContent = `${orig.city} to ${dest.city}`;
+      document.getElementById("inspector-sub").textContent = `${route.category} • ${route.aircraft}`;
+
+      document.getElementById("inspector-body").innerHTML = `
+        <div class="meta-grid">
+          <div><div class="meta-cell-lbl">Great Circle Dist.</div><div class="meta-cell-val">${distKm.toLocaleString()} km (${distNm.toLocaleString()} NM)</div></div>
+          <div><div class="meta-cell-lbl">Est. Block Time</div><div class="meta-cell-val">~${estHours} hrs</div></div>
+          <div><div class="meta-cell-lbl">Assigned Fleet</div><div class="meta-cell-val">${escapeHtml(route.aircraft)}</div></div>
+          <div><div class="meta-cell-lbl">Route Color</div><div class="meta-cell-val" style="display:flex;align-items:center;gap:6px;"><span style="width:11px;height:11px;background:${route.color};display:inline-block;border:1px solid #ccc;"></span>${escapeHtml(route.color)}</div></div>
+        </div>
+
+        ${route.notes ? `<div style="background:#FFF8F8;border-left:3px solid var(--deat-red);padding:8px 10px;font-size:11.5px;"><strong>Notes:</strong> ${escapeHtml(route.notes)}</div>` : ""}
+
+        <div class="section-subhead">Endpoints</div>
+        <div class="connected-list">
+          <div class="connected-item" onclick="selectAirport('${orig.icao}', true)">
+            <div class="ci-main"><span class="ci-city"><span class="mono" style="color:var(--deat-red);">${orig.icao}</span> — ${escapeHtml(orig.city)}</span><span class="ci-meta">${escapeHtml(orig.name)}</span></div>
+            <span style="font-size:10px;color:var(--deat-muted);">Origin &rarr;</span>
+          </div>
+          <div class="connected-item" onclick="selectAirport('${dest.icao}', true)">
+            <div class="ci-main"><span class="ci-city"><span class="mono" style="color:var(--deat-red);">${dest.icao}</span> — ${escapeHtml(dest.city)}</span><span class="ci-meta">${escapeHtml(dest.name)}</span></div>
+            <span style="font-size:10px;color:var(--deat-muted);">Dest. &rarr;</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:4px;">
+          <button class="btn btn-sm btn-primary" style="flex:1;justify-content:center;" onclick="requireUnlocked(() => openEditorForRoute('${route.id}'))">Edit Route</button>
+          <button class="btn btn-sm" onclick="requireUnlocked(() => toggleRouteVisibility('${route.id}'))">Hide Route</button>
+        </div>
+      `;
+
+      document.getElementById("inspector-panel").classList.add("open");
+    }
+
+    /* ================= STATS, LEGEND & FILTERS ================= */
+    function updateStats(filteredRoutes, visibleAirports) {
+      document.getElementById("stat-routes").textContent = filteredRoutes.length;
+      document.getElementById("stat-airports").textContent = visibleAirports.length;
+      document.getElementById("stat-countries").textContent = new Set(visibleAirports.map(a => a.country)).size;
+      document.getElementById("stat-continents").textContent = new Set(visibleAirports.map(a => a.continent)).size;
+      document.getElementById("stat-fleet").textContent = new Set(filteredRoutes.map(r => r.aircraft)).size;
+
+      const counts = {};
+      filteredRoutes.forEach(r => {
+        counts[r.origin] = (counts[r.origin] || 0) + 1;
+        counts[r.destination] = (counts[r.destination] || 0) + 1;
+      });
+      let topIcao = "—";
+      let maxC = 0;
+      Object.entries(counts).forEach(([icao, c]) => {
+        if (c > maxC) { maxC = c; topIcao = icao; }
+      });
+      document.getElementById("stat-top-hub").textContent = maxC > 0 ? `${topIcao} (${maxC})` : "—";
+    }
+
+    function updateLegend(filteredRoutes) {
+      const titleEl = document.getElementById("legend-mode-title");
+      const itemsEl = document.getElementById("legend-items");
+      let html = `<div class="legend-item"><span class="legend-hub-dot"></span>Hub Airport</div>`;
+
+      if (state.colorMode === "brand") {
+        titleEl.textContent = "LEGEND — DEAT BRAND NETWORK";
+        html += `<div class="legend-item"><span class="legend-line" style="background:${networkData.settings.brandColor};"></span>Scheduled Route</div>`;
+      } else if (state.colorMode === "aircraft") {
+        titleEl.textContent = "LEGEND — BY AIRCRAFT TYPE";
+        const activeTypes = new Set(filteredRoutes.map(r => r.aircraft));
+        networkData.aircraft.filter(a => activeTypes.has(a.type)).forEach(ac => {
+          html += `<div class="legend-item"><span class="legend-line" style="background:${ac.color};"></span>${escapeHtml(ac.type)}</div>`;
+        });
+      } else if (state.colorMode === "continent") {
+        titleEl.textContent = "LEGEND — BY CONTINENT";
+        Object.entries(CONTINENT_COLORS).forEach(([cont, col]) => {
+          html += `<div class="legend-item"><span class="legend-line" style="background:${col};"></span>${cont}</div>`;
+        });
+      } else if (state.colorMode === "category") {
+        titleEl.textContent = "LEGEND — BY CATEGORY";
+        Object.entries(CATEGORY_COLORS).forEach(([cat, col]) => {
+          html += `<div class="legend-item"><span class="legend-line" style="background:${col};"></span>${cat}</div>`;
+        });
+      }
+
+      itemsEl.innerHTML = html;
+    }
+
+    function rebuildFilterUI() {
+      const continents = ["Europe", "Asia", "North America", "South America", "Africa", "Oceania"];
+      document.getElementById("filter-continents").innerHTML = continents.map(c => `
+        <button class="filter-chip ${state.filters.continents.has(c) ? "active" : ""}" data-filter-type="continents" data-val="${c}">${c}</button>
+      `).join("");
+
+      document.getElementById("filter-aircraft").innerHTML = networkData.aircraft.map(ac => `
+        <button class="filter-chip ${state.filters.aircraft.has(ac.type) ? "active" : ""}" data-filter-type="aircraft" data-val="${escapeHtml(ac.type)}">
+          <span class="chip-swatch" style="background:${ac.color};"></span>${escapeHtml(ac.type)}
+        </button>
+      `).join("");
+
+      const categories = ["Long-Haul", "Medium-Haul", "Regional", "Seasonal", "Cargo"];
+      document.getElementById("filter-categories").innerHTML = categories.map(cat => `
+        <button class="filter-chip ${state.filters.categories.has(cat) ? "active" : ""}" data-filter-type="categories" data-val="${cat}">${cat}</button>
+      `).join("");
+
+      const countries = Array.from(new Set(networkData.airports.map(a => a.country))).sort();
+      document.getElementById("filter-country").innerHTML =
+        `<option value="">All Countries (${countries.length})</option>` +
+        countries.map(c => `<option value="${escapeHtml(c)}" ${state.filters.country === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
+
+      const hubs = networkData.airports.filter(a => a.isHub);
+      document.getElementById("filter-hub").innerHTML =
+        `<option value="">All Hubs &amp; Stations</option>` +
+        hubs.map(h => `<option value="${h.icao}" ${state.filters.hub === h.icao ? "selected" : ""}>${h.icao} — ${escapeHtml(h.city)}</option>`).join("");
+
+      document.querySelectorAll(".filter-chip").forEach(btn => {
+        btn.onclick = () => {
+          const type = btn.dataset.filterType;
+          const val = btn.dataset.val;
+          if (state.filters[type].has(val)) {
+            state.filters[type].delete(val);
+            btn.classList.remove("active");
+          } else {
+            state.filters[type].add(val);
+            btn.classList.add("active");
+          }
+          renderNetwork();
+        };
+      });
+    }
+
+    /* ================= SEARCH ================= */
+    function initSearch() {
+      const input = document.getElementById("airport-search");
+      const box = document.getElementById("search-results");
+
+      input.addEventListener("input", () => {
+        const q = input.value.trim().toLowerCase();
+        if (!q) {
+          box.classList.remove("open");
+          return;
+        }
+        const matches = networkData.airports.filter(ap =>
+          ap.icao.toLowerCase().includes(q) ||
+          ap.city.toLowerCase().includes(q) ||
+          ap.name.toLowerCase().includes(q) ||
+          ap.country.toLowerCase().includes(q)
+        ).slice(0, 10);
+
+        box.innerHTML = matches.length === 0
+          ? `<div style="padding:10px;font-size:11px;color:var(--deat-muted);">No airports matching "${escapeHtml(q)}"</div>`
+          : matches.map(ap => `
+              <div class="search-result-item" data-icao="${ap.icao}">
+                <div class="sr-left">
+                  <span class="sr-city">${escapeHtml(ap.city)}, ${escapeHtml(ap.country)}</span>
+                  <span class="sr-name">${escapeHtml(ap.name)}</span>
+                </div>
+                <span class="sr-icao">${ap.icao}</span>
+              </div>
+            `).join("");
+
+        box.classList.add("open");
+        box.querySelectorAll(".search-result-item").forEach(item => {
+          item.onclick = () => {
+            box.classList.remove("open");
+            input.value = "";
+            selectAirport(item.dataset.icao, true);
+          };
+        });
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".search-container")) box.classList.remove("open");
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "/" && !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+          e.preventDefault();
+          input.focus();
+        } else if (e.key === "Escape") {
+          box.classList.remove("open");
+          closePasswordModal();
+          document.getElementById("editor-modal").classList.remove("open");
+          clearSelection();
+        }
+      });
+    }
+
+    /* ================= EDITOR & CRUD ================= */
+    function openEditor(tabName = "routes") {
+      if (!isEditorUnlocked()) {
+        requireUnlocked(() => openEditor(tabName));
+        return;
+      }
+      document.getElementById("editor-modal").classList.add("open");
+      switchEditorTab(tabName);
+      populateEditorDropdowns();
+      renderEditorTables();
+    }
+
+    function switchEditorTab(tabName) {
+      document.querySelectorAll(".editor-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
+      document.querySelectorAll(".editor-pane").forEach(p => p.classList.toggle("active", p.id === `pane-${tabName}`));
+    }
+
+    function populateEditorDropdowns() {
+      const sorted = [...networkData.airports].sort((a, b) => a.icao.localeCompare(b.icao));
+      const opts = sorted.map(ap => `<option value="${ap.icao}">${ap.icao} — ${escapeHtml(ap.city)} (${escapeHtml(ap.country)})</option>`).join("");
+      document.getElementById("route-origin").innerHTML = opts;
+      document.getElementById("route-dest").innerHTML = opts;
+      if (sorted.length > 1) document.getElementById("route-dest").selectedIndex = 1;
+
+      document.getElementById("route-aircraft").innerHTML = networkData.aircraft.map(ac =>
+        `<option value="${escapeHtml(ac.type)}">${escapeHtml(ac.type)}</option>`
+      ).join("");
+    }
+
+    function renderEditorTables() {
+      document.getElementById("tab-count-routes").textContent = networkData.routes.length;
+      document.getElementById("tab-count-airports").textContent = networkData.airports.length;
+      document.getElementById("tab-count-aircraft").textContent = networkData.aircraft.length;
+
+      const apMap = getAirportMap();
+      const rFilter = document.getElementById("editor-route-filter").value.trim().toLowerCase();
+
+      document.getElementById("table-routes-body").innerHTML = networkData.routes
+        .filter(r => {
+          if (!rFilter) return true;
+          const o = apMap.get(r.origin);
+          const d = apMap.get(r.destination);
+          return r.origin.toLowerCase().includes(rFilter) ||
+            r.destination.toLowerCase().includes(rFilter) ||
+            r.aircraft.toLowerCase().includes(rFilter) ||
+            (o && o.city.toLowerCase().includes(rFilter)) ||
+            (d && d.city.toLowerCase().includes(rFilter));
+        })
+        .map(r => {
+          const o = apMap.get(r.origin);
+          const d = apMap.get(r.destination);
+          const dist = (o && d) ? haversineDistanceKm(o.lat, o.lng, d.lat, d.lng).toLocaleString() + " km" : "—";
+          return `
+            <tr>
+              <td><strong class="mono">${r.origin} &rarr; ${r.destination}</strong><br><span style="font-size:10px;color:var(--deat-muted);">${o ? escapeHtml(o.city) : ""} to ${d ? escapeHtml(d.city) : ""}</span></td>
+              <td class="mono">${escapeHtml(r.aircraft)}</td>
+              <td>${escapeHtml(r.category)}</td>
+              <td class="mono">${dist}</td>
+              <td><span style="display:inline-block;width:14px;height:14px;background:${r.color};border:1px solid #ccc;"></span></td>
+              <td><input type="checkbox" ${r.visible ? "checked" : ""} onchange="requireUnlocked(() => toggleRouteVisibility('${r.id}'))" /></td>
+              <td style="white-space:nowrap;">
+                <button class="btn btn-sm" type="button" onclick="requireUnlocked(() => editRouteInForm('${r.id}'))">Edit</button>
+                <button class="btn btn-sm btn-danger" type="button" onclick="requireUnlocked(() => deleteRoute('${r.id}'))">Del</button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+      const aFilter = document.getElementById("editor-airport-filter").value.trim().toLowerCase();
+      document.getElementById("table-airports-body").innerHTML = networkData.airports
+        .filter(ap => !aFilter ||
+          ap.icao.toLowerCase().includes(aFilter) ||
+          ap.city.toLowerCase().includes(aFilter) ||
+          ap.name.toLowerCase().includes(aFilter) ||
+          ap.country.toLowerCase().includes(aFilter))
+        .map(ap => `
+          <tr>
+            <td class="mono"><strong>${ap.icao}</strong></td>
+            <td><strong>${escapeHtml(ap.city)}</strong><br><span style="font-size:10px;color:var(--deat-muted);">${escapeHtml(ap.name)}</span></td>
+            <td>${escapeHtml(ap.country)}<br><span style="font-size:10px;color:var(--deat-muted);">${escapeHtml(ap.continent)}</span></td>
+            <td class="mono" style="font-size:10.5px;">${ap.lat.toFixed(3)}, ${ap.lng.toFixed(3)}</td>
+            <td>${ap.isHub ? '<span class="hub-badge">HUB</span>' : "Station"}</td>
+            <td style="white-space:nowrap;">
+              <button class="btn btn-sm" type="button" onclick="requireUnlocked(() => editAirportInForm('${ap.icao}'))">Edit</button>
+              <button class="btn btn-sm btn-danger" type="button" onclick="requireUnlocked(() => deleteAirport('${ap.icao}'))">Del</button>
+            </td>
+          </tr>
+        `).join("");
+
+      document.getElementById("table-aircraft-body").innerHTML = networkData.aircraft.map(ac => {
+        const used = networkData.routes.filter(r => r.aircraft === ac.type).length;
+        return `
+          <tr>
+            <td class="mono"><strong>${escapeHtml(ac.type)}</strong></td>
+            <td>${escapeHtml(ac.family || "—")}</td>
+            <td class="mono">${ac.rangeKm ? ac.rangeKm.toLocaleString() + " km" : "—"}</td>
+            <td><input type="color" value="${ac.color}" onchange="requireUnlocked(() => updateAircraftColor('${escapeHtml(ac.type)}', this.value))" style="width:36px;height:22px;border:1px solid #ccc;padding:1px;" /></td>
+            <td class="mono">${used}</td>
+            <td><button class="btn btn-sm btn-danger" type="button" onclick="requireUnlocked(() => deleteAircraft('${escapeHtml(ac.type)}'))">Remove</button></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    window.editRouteInForm = function (id) {
+      const r = networkData.routes.find(x => x.id === id);
+      if (!r) return;
+      document.getElementById("form-route-title").textContent = `Edit Route (${r.origin} → ${r.destination})`;
+      document.getElementById("edit-route-id").value = r.id;
+      document.getElementById("route-origin").value = r.origin;
+      document.getElementById("route-dest").value = r.destination;
+      document.getElementById("route-aircraft").value = r.aircraft;
+      document.getElementById("route-category").value = r.category;
+      document.getElementById("route-color").value = r.color;
+      document.getElementById("route-status").value = r.status || "Active";
+      document.getElementById("route-weight").value = r.weight || 2.2;
+      document.getElementById("route-opacity").value = r.opacity || 0.92;
+      document.getElementById("route-notes").value = r.notes || "";
+      document.getElementById("route-visible").checked = r.visible !== false;
+      document.getElementById("btn-cancel-route-edit").style.display = "inline-flex";
+    };
+
+    window.openEditorForRoute = function (id) {
+      openEditor("routes");
+      editRouteInForm(id);
+    };
+
+    window.openNewRouteFrom = function (originIcao) {
+      openEditor("routes");
+      resetRouteForm();
+      document.getElementById("route-origin").value = originIcao;
+    };
+
+    function resetRouteForm() {
+      document.getElementById("form-route").reset();
+      document.getElementById("edit-route-id").value = "";
+      document.getElementById("route-color").value = networkData.settings.brandColor || "#EE1C25";
+      document.getElementById("form-route-title").textContent = "Add New Flight Route";
+      document.getElementById("btn-cancel-route-edit").style.display = "none";
+    }
+
+    window.toggleRouteVisibility = function (id) {
+      const r = networkData.routes.find(x => x.id === id);
+      if (!r) return;
+      r.visible = !r.visible;
+      saveNetworkData();
+      renderNetwork();
+      if (document.getElementById("editor-modal").classList.contains("open")) renderEditorTables();
+      showToast(r.visible ? "Route shown." : "Route hidden.");
+    };
+
+    window.deleteRoute = function (id) {
+      networkData.routes = networkData.routes.filter(r => r.id !== id);
+      if (state.selection.type === "route" && state.selection.id === id) clearSelection();
+      saveNetworkData();
+      renderEditorTables();
+      renderNetwork();
+      showToast("Route deleted.");
+    };
+
+    window.editAirportInForm = function (icao) {
+      const ap = networkData.airports.find(a => a.icao === icao);
+      if (!ap) return;
+      document.getElementById("form-airport-title").textContent = `Edit Airport (${ap.icao})`;
+      document.getElementById("edit-airport-original-icao").value = ap.icao;
+      document.getElementById("ap-icao").value = ap.icao;
+      document.getElementById("ap-name").value = ap.name;
+      document.getElementById("ap-city").value = ap.city;
+      document.getElementById("ap-country").value = ap.country;
+      document.getElementById("ap-continent").value = ap.continent;
+      document.getElementById("ap-lat").value = ap.lat;
+      document.getElementById("ap-lng").value = ap.lng;
+      document.getElementById("ap-hub").checked = !!ap.isHub;
+      document.getElementById("btn-cancel-ap-edit").style.display = "inline-flex";
+    };
+
+    window.openEditorForAirport = function (icao) {
+      openEditor("airports");
+      editAirportInForm(icao);
+    };
+
+    function resetAirportForm() {
+      document.getElementById("form-airport").reset();
+      document.getElementById("edit-airport-original-icao").value = "";
+      document.getElementById("form-airport-title").textContent = "Add / Edit Airport";
+      document.getElementById("btn-cancel-ap-edit").style.display = "none";
+    }
+
+    window.deleteAirport = function (icao) {
+      const used = networkData.routes.filter(r => r.origin === icao || r.destination === icao).length;
+      if (used > 0) {
+        showToast(`Cannot delete ${icao}: used by ${used} route(s).`);
+        return;
+      }
+      networkData.airports = networkData.airports.filter(a => a.icao !== icao);
+      if (state.selection.type === "airport" && state.selection.id === icao) clearSelection();
+      saveNetworkData();
+      populateEditorDropdowns();
+      rebuildFilterUI();
+      renderEditorTables();
+      renderNetwork();
+      showToast(`Airport ${icao} removed.`);
+    };
+
+    window.updateAircraftColor = function (type, color) {
+      const ac = networkData.aircraft.find(a => a.type === type);
+      if (ac) {
+        ac.color = color;
+        saveNetworkData();
+        rebuildFilterUI();
+        renderNetwork();
+      }
+    };
+
+    window.deleteAircraft = function (type) {
+      const used = networkData.routes.filter(r => r.aircraft === type).length;
+      if (used > 0) {
+        showToast(`Cannot remove ${type}: assigned to ${used} route(s).`);
+        return;
+      }
+      networkData.aircraft = networkData.aircraft.filter(a => a.type !== type);
+      saveNetworkData();
+      populateEditorDropdowns();
+      rebuildFilterUI();
+      renderEditorTables();
+      renderNetwork();
+      showToast(`Aircraft ${type} removed.`);
+    };
+
+    /* ================= BRANDING & PNG EXPORT ================= */
+    function applyBrandTheme() {
+      const { airlineName, networkSubtitle, brandColor } = networkData.settings;
+      document.documentElement.style.setProperty("--deat-red", brandColor);
+      document.querySelectorAll(".brand-wordmark, #footer-airline-name").forEach(el => {
+        el.textContent = airlineName;
+      });
+      document.getElementById("header-network-subtitle").textContent = networkSubtitle;
+      document.getElementById("footer-network-subtitle").textContent = networkSubtitle;
+      document.getElementById("setting-airline-name").value = airlineName;
+      document.getElementById("setting-network-subtitle").value = networkSubtitle;
+      document.getElementById("setting-brand-color").value = brandColor;
+    }
+
+    function exportMapSnapshotPNG() {
+      showToast("Exporting route map snapshot...");
+      const mapEl = document.getElementById("map");
+      const w = mapEl.clientWidth * 2;
+      const h = mapEl.clientHeight * 2 + 80;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, w, h);
+
+      const svgEl = mapEl.querySelector("svg");
+      if (!svgEl) return;
+
+      const cloned = svgEl.cloneNode(true);
+      cloned.setAttribute("width", mapEl.clientWidth);
+      cloned.setAttribute("height", mapEl.clientHeight);
+      const blob = new Blob([new XMLSerializer().serializeToString(cloned)], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, w, mapEl.clientHeight * 2);
+        URL.revokeObjectURL(url);
+
+        markerLayersByIcao.forEach(({ airport, marker }) => {
+          const pt = map.latLngToContainerPoint(marker.getLatLng());
+          if (pt.x < -30 || pt.x > mapEl.clientWidth + 30 || pt.y < -30 || pt.y > mapEl.clientHeight + 30) return;
+          const cx = pt.x * 2;
+          const cy = pt.y * 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, airport.isHub ? 10 : 7.5, 0, Math.PI * 2);
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fill();
+          ctx.lineWidth = airport.isHub ? 5.5 : 4;
+          ctx.strokeStyle = networkData.settings.brandColor;
+          ctx.stroke();
+
+          ctx.font = "italic bold 19px Inter, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = networkData.settings.brandColor;
+          ctx.fillText(`${airport.city.toLowerCase()} (${airport.icao})`, cx, cy + 30);
+        });
+
+        const fy = mapEl.clientHeight * 2;
+        ctx.fillStyle = networkData.settings.brandColor;
+        ctx.fillRect(0, fy, w, 80);
+        ctx.font = "italic 800 40px Inter, sans-serif";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.textAlign = "left";
+        ctx.fillText(`${networkData.settings.airlineName} — ${networkData.settings.networkSubtitle}`, 32, fy + 52);
+
+        const a = document.createElement("a");
+        a.download = `${networkData.settings.airlineName}_Network_Map.png`;
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        showToast("PNG map exported.");
+      };
+      img.src = url;
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /* ================= EVENT BINDINGS ================= */
+    document.addEventListener("DOMContentLoaded", async () => {
+      networkData = await loadInitialData();
+      await initMap();
+      initSearch();
+
+      document.getElementById("form-password-unlock").onsubmit = async (e) => {
+        e.preventDefault();
+        const inputPass = document.getElementById("auth-password-input").value;
+        const salt = (networkData.security && networkData.security.salt) || "deat_vienna_salt_2026";
+        const expectedHash = (networkData.security && networkData.security.passwordHash) || "";
+        const actualHash = await hashPassword(inputPass, salt);
+
+        if (actualHash === expectedHash) {
+          setEditorUnlocked(true);
+          const nextAction = pendingProtectedAction;
+          closePasswordModal();
+          showToast("Editing mode unlocked for this session.");
+          if (typeof nextAction === "function") {
+            nextAction();
+          }
+        } else {
+          const errEl = document.getElementById("auth-error");
+          errEl.textContent = "Invalid password. Please try again.";
+          errEl.classList.add("show");
+        }
+      };
+
+      document.getElementById("btn-close-auth").onclick = closePasswordModal;
+      document.getElementById("btn-cancel-auth").onclick = closePasswordModal;
+
+      document.getElementById("btn-lock-session").onclick = () => {
+        setEditorUnlocked(false);
+        document.getElementById("editor-modal").classList.remove("open");
+        showToast("Editing mode locked.");
+      };
+
+      document.getElementById("btn-change-password").onclick = async () => {
+        if (!isEditorUnlocked()) return openPasswordModal();
+        const newPass = document.getElementById("new-editor-password").value;
+        if (!newPass || newPass.length < 8) {
+          showToast("Password must be at least 8 characters.");
+          return;
+        }
+        const newSalt = "deat_salt_" + Date.now();
+        networkData.security = {
+          salt: newSalt,
+          passwordHash: await hashPassword(newPass, newSalt)
+        };
+        document.getElementById("new-editor-password").value = "";
+        saveNetworkData();
+        showToast("Editor password updated.");
+      };
+
+      document.getElementById("btn-toggle-filters").onclick = function () {
+        this.classList.toggle("active");
+        document.getElementById("filter-panel").classList.toggle("collapsed");
+      };
+
+      document.getElementById("btn-reset-view").onclick = () => {
+        clearSelection();
+        map.flyTo([28, 22], 3, { duration: 0.65 });
+      };
+
+      document.getElementById("btn-export-png").onclick = exportMapSnapshotPNG;
+      document.getElementById("btn-close-inspector").onclick = clearSelection;
+
+      document.getElementById("select-color-mode").onchange = (e) => {
+        state.colorMode = e.target.value;
+        renderNetwork();
+      };
+
+      document.getElementById("filter-country").onchange = (e) => {
+        state.filters.country = e.target.value;
+        renderNetwork();
+      };
+
+      document.getElementById("filter-hub").onchange = (e) => {
+        state.filters.hub = e.target.value;
+        renderNetwork();
+      };
+
+      document.getElementById("toggle-icao-labels").onchange = (e) => {
+        state.display.showIcao = e.target.checked;
+        renderNetwork();
+      };
+
+      document.getElementById("toggle-city-labels").onchange = (e) => {
+        state.display.showCity = e.target.checked;
+        renderNetwork();
+      };
+
+      document.getElementById("toggle-arrows").onchange = (e) => {
+        state.display.showArrows = e.target.checked;
+        renderNetwork();
+      };
+
+      document.getElementById("toggle-hubs-only").onchange = (e) => {
+        state.filters.hubsOnly = e.target.checked;
+        renderNetwork();
+      };
+
+      document.querySelectorAll("[data-clear]").forEach(btn => {
+        btn.onclick = () => {
+          state.filters[btn.dataset.clear].clear();
+          rebuildFilterUI();
+          renderNetwork();
+        };
+      });
+
+      document.getElementById("btn-clear-all-filters").onclick = () => {
+        state.filters.continents.clear();
+        state.filters.aircraft.clear();
+        state.filters.categories.clear();
+        state.filters.country = "";
+        state.filters.hub = "";
+        state.filters.hubsOnly = false;
+        document.getElementById("toggle-hubs-only").checked = false;
+        rebuildFilterUI();
+        renderNetwork();
+        showToast("Filters reset.");
+      };
+
+      document.getElementById("btn-open-editor").onclick = () => openEditor("routes");
+      document.getElementById("btn-close-editor").onclick = () => {
+        document.getElementById("editor-modal").classList.remove("open");
+      };
+
+      document.querySelectorAll(".editor-tab").forEach(tab => {
+        tab.onclick = () => switchEditorTab(tab.dataset.tab);
+      });
+
+      document.getElementById("editor-route-filter").oninput = renderEditorTables;
+      document.getElementById("editor-airport-filter").oninput = renderEditorTables;
+      document.getElementById("btn-cancel-route-edit").onclick = resetRouteForm;
+      document.getElementById("btn-cancel-ap-edit").onclick = resetAirportForm;
+
+      document.getElementById("form-route").onsubmit = (e) => {
+        e.preventDefault();
+        if (!isEditorUnlocked()) return openPasswordModal();
+        const origin = document.getElementById("route-origin").value;
+        const destination = document.getElementById("route-dest").value;
+        if (origin === destination) {
+          showToast("Origin and destination must differ.");
+          return;
+        }
+        const editId = document.getElementById("edit-route-id").value;
+        const item = {
+          id: editId || "r-" + Date.now(),
+          origin,
+          destination,
+          aircraft: document.getElementById("route-aircraft").value,
+          category: document.getElementById("route-category").value,
+          color: document.getElementById("route-color").value,
+          status: document.getElementById("route-status").value,
+          weight: parseFloat(document.getElementById("route-weight").value) || 2.2,
+          opacity: parseFloat(document.getElementById("route-opacity").value) || 0.92,
+          notes: document.getElementById("route-notes").value.trim(),
+          visible: document.getElementById("route-visible").checked
+        };
+
+        if (editId) {
+          const idx = networkData.routes.findIndex(r => r.id === editId);
+          if (idx !== -1) networkData.routes[idx] = item;
+          showToast("Route updated.");
+        } else {
+          networkData.routes.unshift(item);
+          showToast("Route added.");
+        }
+        saveNetworkData();
+        resetRouteForm();
+        renderEditorTables();
+        renderNetwork();
+      };
+
+      document.getElementById("form-airport").onsubmit = (e) => {
+        e.preventDefault();
+        if (!isEditorUnlocked()) return openPasswordModal();
+        const origIcao = document.getElementById("edit-airport-original-icao").value;
+        const newIcao = document.getElementById("ap-icao").value.trim().toUpperCase();
+        if (newIcao.length < 3 || newIcao.length > 4) {
+          showToast("ICAO code must be 3–4 letters.");
+          return;
+        }
+        const item = {
+          icao: newIcao,
+          name: document.getElementById("ap-name").value.trim(),
+          city: document.getElementById("ap-city").value.trim(),
+          country: document.getElementById("ap-country").value.trim(),
+          continent: document.getElementById("ap-continent").value,
+          lat: parseFloat(document.getElementById("ap-lat").value),
+          lng: parseFloat(document.getElementById("ap-lng").value),
+          isHub: document.getElementById("ap-hub").checked
+        };
+        if (origIcao) {
+          const idx = networkData.airports.findIndex(a => a.icao === origIcao);
+          if (idx !== -1) networkData.airports[idx] = item;
+          if (origIcao !== newIcao) {
+            networkData.routes.forEach(r => {
+              if (r.origin === origIcao) r.origin = newIcao;
+              if (r.destination === origIcao) r.destination = newIcao;
+            });
+          }
+          showToast(`Airport ${newIcao} updated.`);
+        } else {
+          if (networkData.airports.some(a => a.icao === newIcao)) {
+            showToast(`Airport ${newIcao} already exists.`);
+            return;
+          }
+          networkData.airports.push(item);
+          showToast(`Airport ${newIcao} added.`);
+        }
+        saveNetworkData();
+        resetAirportForm();
+        populateEditorDropdowns();
+        rebuildFilterUI();
+        renderEditorTables();
+        renderNetwork();
+      };
+
+      document.getElementById("form-aircraft").onsubmit = (e) => {
+        e.preventDefault();
+        if (!isEditorUnlocked()) return openPasswordModal();
+        const type = document.getElementById("ac-type").value.trim();
+        if (!type) return;
+        if (networkData.aircraft.some(a => a.type.toLowerCase() === type.toLowerCase())) {
+          showToast("Aircraft type already exists.");
+          return;
+        }
+        networkData.aircraft.push({
+          type,
+          family: document.getElementById("ac-family").value.trim(),
+          rangeKm: parseInt(document.getElementById("ac-range").value, 10) || null,
+          color: document.getElementById("ac-color").value
+        });
+        document.getElementById("form-aircraft").reset();
+        saveNetworkData();
+        populateEditorDropdowns();
+        rebuildFilterUI();
+        renderEditorTables();
+        showToast(`Aircraft ${type} added.`);
+      };
+
+      document.getElementById("btn-save-settings").onclick = () => {
+        if (!isEditorUnlocked()) return openPasswordModal();
+        networkData.settings.airlineName = document.getElementById("setting-airline-name").value.trim() || "DEAT";
+        networkData.settings.networkSubtitle = document.getElementById("setting-network-subtitle").value.trim() || "global passenger network";
+        networkData.settings.brandColor = document.getElementById("setting-brand-color").value;
+        saveNetworkData();
+        applyBrandTheme();
+        renderNetwork();
+        showToast("Branding updated.");
+      };
+
+      document.getElementById("btn-export-json").onclick = () => {
+        const blob = new Blob([JSON.stringify(networkData, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${networkData.settings.airlineName}_Network_Backup.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("JSON backup downloaded.");
+      };
+
+      document.getElementById("input-import-json").onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        requireUnlocked(() => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              const parsed = JSON.parse(ev.target.result);
+              if (!Array.isArray(parsed.airports) || !Array.isArray(parsed.routes)) {
+                throw new Error("Missing airports or routes array.");
+              }
+              networkData = parsed;
+              saveNetworkData();
+              applyBrandTheme();
+              populateEditorDropdowns();
+              rebuildFilterUI();
+              renderEditorTables();
+              renderNetwork();
+              showToast("Network JSON imported.");
+            } catch (err) {
+              showToast("Invalid JSON file: " + err.message);
+            }
+          };
+          reader.readAsText(file);
+        });
+        e.target.value = "";
+      };
+
+      document.getElementById("btn-reset-sample").onclick = () => {
+        requireUnlocked(async () => {
+          localStorage.removeItem(STORAGE_KEY);
+          networkData = await loadInitialData();
+          saveNetworkData();
+          applyBrandTheme();
+          populateEditorDropdowns();
+          rebuildFilterUI();
+          renderEditorTables();
+          clearSelection();
+          renderNetwork();
+          showToast("Network reset to default dataset.");
+        });
+      };
+    });
+  </script>
 </body>
 </html>
