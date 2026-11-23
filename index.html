@@ -1292,9 +1292,9 @@
       }
 
       nodesGroup.selectAll("text.map-label-city")
-        .style("font-size", (d) => (d.isHub || d.icao === selectedAirportIcao ? "11.5px" : "10px"))
-        .style("stroke-width", "3px")
-        .attr("y", (d) => (d.isHub || d.icao === selectedAirportIcao ? 16 : 14))
+        .style("font-size", (d) => (d.isHub || d.icao === selectedAirportIcao ? "13.5px" : "11.5px"))
+        .style("stroke-width", "3.2px")
+        .attr("y", (d) => (d.isHub || d.icao === selectedAirportIcao ? 17 : 15))
         .style("display", (d) => (showLabelSet.has(d.icao) ? null : "none"));
 
       nodesGroup.selectAll("text.map-label-icao")
@@ -1487,7 +1487,7 @@
 
       nodeGroups.select("text.map-label-city")
         .attr("text-anchor", "middle")
-        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#0f172a"))
+        .attr("fill", (d) => (d.icao === selectedAirportIcao ? highlightColor : "#dc2626"))
         .text((d) => d.city);
 
       nodeGroups.select("text.map-label-icao")
