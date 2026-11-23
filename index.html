@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Global Route Network &amp; Hub Visualizer</title>
+  <title>DEAT — Global Route Network</title>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
   <style>
@@ -16,7 +16,7 @@
       --border-strong: #cbd5e1;
       --text: #0f172a;
       --text-muted: #64748b;
-      --accent: #dc2626;
+      --accent: #EE1C25;
       --route-highlight: #0284c7;
       --land: #dce0e6;
       --land-stroke: #ffffff;
@@ -66,7 +66,7 @@
       cursor: grabbing;
     }
 
-    /* Floating Airline Brand & Sync Pill (Top-Left) */
+    /* Floating DEAT Brand & Sync Pill (Top-Left) */
     .hud-brand {
       position: fixed;
       top: 16px;
@@ -74,34 +74,44 @@
       z-index: 30;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
       background: var(--surface);
       backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 6px 14px 6px 6px;
       box-shadow: var(--shadow-sm);
     }
 
-    .brand-pulse {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.16);
+    .deat-badge {
+      background: #EE1C25;
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 7px 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       flex-shrink: 0;
     }
 
-    .brand-title {
-      font-size: 14px;
+    .deat-wordmark {
       font-weight: 800;
+      font-style: italic;
+      font-size: 15px;
       letter-spacing: 0.04em;
-      text-transform: uppercase;
-      line-height: 1.1;
+      line-height: 1;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      font-style: italic;
+      color: #4B5056;
+      line-height: 1.15;
     }
 
     .brand-sub {
-      font-size: 11.5px;
+      font-size: 11px;
       color: var(--text-muted);
       margin-top: 2px;
     }
@@ -729,11 +739,17 @@
     <svg id="network-map" role="img" aria-label="Interactive Global Route Network Map"></svg>
   </main>
 
-  <!-- Floating Brand HUD -->
+  <!-- Floating DEAT Brand HUD -->
   <div class="hud-brand">
-    <div class="brand-pulse"></div>
+    <div class="deat-badge">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" fill="none" width="20" height="17" aria-hidden="true">
+        <circle cx="64" cy="52" r="28" stroke="#FFFFFF" stroke-width="8.5"/>
+        <path d="M18 14C33 33 57 44 95 47C69 54 53 67 39 86C46 65 39 45 18 14Z" fill="#FFFFFF"/>
+      </svg>
+      <span class="deat-wordmark">DEAT</span>
+    </div>
     <div>
-      <div class="brand-title">Route Network</div>
+      <div class="brand-title">global passenger network</div>
       <div class="brand-sub" id="network-summary">Connecting to Firestore...</div>
     </div>
   </div>
@@ -1308,12 +1324,24 @@
         });
     }
 
+    function applyConstantRouteWeights(scale) {
+      const k = Math.max(1, scale || 1);
+      const invK = 1 / k;
+      routesGroup.selectAll("path.route-visible-path")
+        .attr("stroke-width", (d) => ((d.isHighlighted ? 2.1 : 1.15) * invK).toFixed(4));
+      routesGroup.selectAll("path.route-hit-area")
+        .attr("stroke-width", (14 * invK).toFixed(4));
+      landGroup.selectAll("path.land-path")
+        .attr("stroke-width", (0.65 * invK).toFixed(4));
+    }
+
     const zoomBehavior = d3.zoom()
       .scaleExtent([1, 12])
       .on("zoom", (event) => {
         currentZoomTransform = event.transform;
         currentZoomScale = event.transform.k || 1;
         mapLayer.attr("transform", event.transform);
+        applyConstantRouteWeights(currentZoomScale);
         applyZoomScaledLabelStyles(currentZoomScale);
       });
 
@@ -1442,7 +1470,6 @@
       routeGroups.select("path.route-visible-path")
         .attr("d", (d) => lineBuilder(d.coords))
         .attr("stroke", (d) => d.color)
-        .attr("stroke-width", (d) => (d.isHighlighted ? 2.9 : 1.7))
         .attr("opacity", (d) => (d.isDimmed ? 0.18 : 0.92));
 
       routeGroups.select("path.route-hit-area")
@@ -1495,6 +1522,7 @@
         .attr("fill", "#64748b")
         .text((d) => d.icao);
 
+      applyConstantRouteWeights(currentZoomScale);
       applyZoomScaledLabelStyles(currentZoomScale);
     }
 
